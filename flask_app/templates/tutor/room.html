@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <title>{{ app_name }} - {{ title }}</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='tutor/style.css') }}">
+    <script src="{{ url_for('static', filename='js/tutor-room.js') }}" defer></script>
+</head>
+<body data-room-id="{{ room_id }}">
+    <header>
+        <div class="ProductName">{{ app_name }} - {{ title }}</div>
+        <nav class="Navgation">
+            <a href="{{ url_for('tutor.tutor_main') }}">ホーム</a>
+            <a href="{{ url_for('tutor.tutor_main') }}">授業一覧</a>
+            <a href="{{ url_for('pages.mypage') }}"><span id="tutorUsername">講師</span>さん</a>
+            <a href="#" id="logoutLink">ログアウト</a>
+        </nav>
+    </header>
+
+    <main class="content">
+        <section class="room-panel">
+            <div class="room-panel__heading">
+                <div>
+                    <p class="room-panel__eyebrow">現在のルーム</p>
+                    <h1 id="roomName">読み込み中...</h1>
+                </div>
+                <span class="room-status" id="roomStatus">確認中</span>
+            </div>
+
+            <div class="room-panel__share">
+                <label for="studentRoomUrl">参加者用URL</label>
+                <div class="room-panel__url-row">
+                    <input id="studentRoomUrl" type="text" readonly>
+                    <button id="copyRoomUrl" type="button">URLをコピー</button>
+                </div>
+            </div>
+
+            <form id="closeRoomForm" class="room-panel__actions">
+                <a class="secondary-button" href="{{ url_for('tutor.tutor_main') }}">ホームに戻る</a>
+                <button class="danger-button" id="closeRoomButton" type="submit">講義を終了する</button>
+            </form>
+            <p class="room-panel__message" id="roomMessage" role="status"></p>
+        </section>
+    </main>
+</body>
+</html>

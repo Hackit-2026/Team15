@@ -48,4 +48,204 @@ header a:hover {
 .content {
     flex: 1;
     width: 100%;
+    box-sizing: border-box;
+    padding: 24px;
+}
+
+.room-creator {
+    width: 220px;
+    max-width: 100%;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid rgb(190, 190, 190);
+    border-radius: 10px;
+    background: white;
+    box-sizing: border-box;
+    transition: width 0.25s ease, padding 0.25s ease, box-shadow 0.25s ease;
+}
+
+.room-creator.is-open {
+    width: 100%;
+    padding: 20px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.room-creator__toggle {
+    width: 100%;
+    padding: 14px 18px;
+    border: 0;
+    background: transparent;
+    color: rgb(50, 50, 50);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.room-creator.is-open .room-creator__toggle {
+    padding: 0 0 16px;
+    font-weight: bold;
+}
+
+.room-creator__form {
+    display: grid;
+    gap: 10px;
+    max-height: 0;
+    opacity: 0;
+    visibility: hidden;
+    transition: max-height 0.25s ease, opacity 0.2s ease;
+}
+
+.room-creator.is-open .room-creator__form {
+    max-height: 180px;
+    opacity: 1;
+    visibility: visible;
+}
+
+.room-creator__form input {
+    min-width: 0;
+    padding: 10px 12px;
+    border: 1px solid rgb(170, 170, 170);
+    border-radius: 6px;
+    font: inherit;
+}
+
+.room-creator__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.room-creator__actions button {
+    padding: 8px 14px;
+    border: 1px solid rgb(130, 130, 130);
+    border-radius: 6px;
+    background: white;
+    cursor: pointer;
+}
+
+.room-creator__message {
+    min-height: 1.2em;
+    margin: 0;
+    color: rgb(190, 45, 45);
+    font-size: 0.85rem;
+}
+
+.room-panel {
+    width: 100%;
+    padding: 24px;
+    border: 1px solid rgb(190, 190, 190);
+    border-radius: 10px;
+    background: white;
+    box-sizing: border-box;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.room-panel__heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.room-panel__heading h1,
+.room-panel__eyebrow {
+    margin: 0;
+}
+
+.room-panel__eyebrow {
+    margin-bottom: 6px;
+    color: rgb(110, 110, 110);
+    font-size: 0.8rem;
+}
+
+.room-status {
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: rgb(224, 246, 230);
+    color: rgb(35, 120, 60);
+    font-size: 0.8rem;
+    white-space: nowrap;
+}
+
+.room-status.is-finished {
+    background: rgb(235, 235, 235);
+    color: rgb(100, 100, 100);
+}
+
+.room-panel__share {
+    display: grid;
+    gap: 8px;
+    margin: 28px 0;
+}
+
+.room-panel__url-row {
+    display: flex;
+    gap: 8px;
+}
+
+.room-panel__url-row input {
+    flex: 1;
+    min-width: 0;
+    padding: 10px 12px;
+    border: 1px solid rgb(170, 170, 170);
+    border-radius: 6px;
+    font: inherit;
+}
+
+.room-panel button,
+.secondary-button {
+    padding: 10px 16px;
+    border: 1px solid rgb(130, 130, 130);
+    border-radius: 6px;
+    background: white;
+    color: rgb(50, 50, 50);
+    font: inherit;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.room-panel__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.room-panel .danger-button {
+    border-color: rgb(190, 45, 45);
+    background: rgb(190, 45, 45);
+    color: white;
+}
+
+.room-panel .danger-button:disabled {
+    border-color: rgb(180, 180, 180);
+    background: rgb(180, 180, 180);
+    cursor: not-allowed;
+}
+
+.room-panel__message {
+    min-height: 1.2em;
+    margin: 16px 0 0;
+    color: rgb(70, 70, 70);
+    font-size: 0.85rem;
+}
+
+@media (max-width: 700px) {
+    header {
+        height: auto;
+        flex-direction: column;
+    }
+
+    header nav {
+        flex-wrap: wrap;
+        justify-content: flex-start;
+    }
+
+    header a {
+        min-height: 44px;
+    }
+
+    .room-panel__url-row,
+    .room-panel__actions {
+        flex-direction: column;
+    }
 }

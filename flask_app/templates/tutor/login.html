@@ -3,12 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link
-    <title>Login</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='tutor/login.css') }}">
+    <title>{{ app_name }} - {{ title }}</title>
+    <script src="{{ url_for('static', filename='js/tutor-login.js') }}" defer></script>
 </head>
 <body>
-    <div>
+    <main class="login-card">
+        <h1>{{ title }}</h1>
+        <p id="loginMessage" class="login-message" role="status"></p>
 
-    </div>
+        <form id="tutorLoginForm">
+            <label for="username">ユーザー名</label>
+            <input type="text" id="username" name="username" autocomplete="username" required>
+
+            <label for="password">パスワード</label>
+            <input type="password" id="password" name="password" autocomplete="current-password" required>
+
+            <button type="submit">ログイン</button>
+        </form>
+        <a href="{{ url_for('pages.register') }}">アカウントを作成</a>
+    </main>
 </body>
 </html>

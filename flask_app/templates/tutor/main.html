@@ -1,23 +1,49 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <title>Login</title>
+    <title>{{ app_name }} - {{ title }}</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='tutor/style.css') }}">
+    <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
 </head>
 <body>
     <header>
-        <div class="ProductName">サンプルアプリ名 - 講師側</div>
+        <div class="ProductName">{{ app_name }} - {{ title }}</div>
         <nav class="Navgation">
-            <a href="#">ホーム</a>
+            <a href="{{ url_for('tutor.tutor_main') }}">ホーム</a>
             <a href="#">授業一覧</a>
-            <a href="#">xxxさん</a>
-            <a href="#">ログアウト</a>
+            <a href="{{ url_for('pages.mypage') }}"><span id="tutorUsername">講師</span>さん</a>
+            <a href="#" id="logoutLink">ログアウト</a>
         </nav>
     </header>
     <div class="content">
+        <section class="room-creator" id="roomCreator">
+            <button
+                class="room-creator__toggle"
+                id="roomCreatorToggle"
+                type="button"
+                aria-expanded="false"
+                aria-controls="roomCreatorForm"
+            >＋ ルームの作成</button>
 
+            <form class="room-creator__form" id="roomCreatorForm">
+                <label for="roomName">ルーム名</label>
+                <input
+                    id="roomName"
+                    name="name"
+                    type="text"
+                    placeholder="例：ネットワーク基礎"
+                    autocomplete="off"
+                    required
+                >
+                <div class="room-creator__actions">
+                    <button type="submit">作成</button>
+                    <button id="roomCreatorCancel" type="button">キャンセル</button>
+                </div>
+                <p class="room-creator__message" id="roomCreatorMessage" role="status"></p>
+            </form>
+        </section>
     </div>
 </body>
 </html>

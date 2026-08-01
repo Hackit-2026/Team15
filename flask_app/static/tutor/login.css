@@ -1,0 +1,51 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    min-height: 100vh;
+    margin: 0;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background: rgb(245, 247, 250);
+    color: rgb(45, 45, 45);
+    font-family: sans-serif;
+}
+
+.login-card {
+    width: min(100%, 420px);
+    padding: 32px;
+    border: 1px solid rgb(220, 220, 220);
+    border-radius: 12px;
+    background: white;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+}
+
+.login-card h1 {
+    margin: 0 0 24px;
+}
+
+.login-card form {
+    display: grid;
+    gap: 10px;
+}
+
+.login-card input,
+.login-card button {
+    width: 100%;
+    padding: 11px 12px;
+    border: 1px solid rgb(180, 180, 180);
+    border-radius: 6px;
+    font: inherit;
+}
+
+.login-card button {
+    margin: 8px 0;
+    cursor: pointer;
+}
+
+.login-message {
+    min-height: 1.2em;
+    color: rgb(190, 45, 45);
+}
