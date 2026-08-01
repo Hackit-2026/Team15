@@ -1,36 +1,26 @@
-from flask import Flask, render_template, Blueprint
+import os
+
+from flask import Flask
+from flask_migrate import Migrate
+
+from controllers.main_controller import main
+from models import db
+
+base_dir = os.path.dirname(__file__)
 
 app = Flask(__name__)
-app.config["app_name"] = "サンプルアプリ名"
+app.secret_key = "dev-secret-key-change-me"
 
-tutor_routes = Blueprint("tutor", __name__, url_prefix="/tutor")
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(base_dir, "data.sqlite")
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-@app.context_processor
-def inject_app_name():
-    return {
-        "app_name": app.config["app_name"]
-    }
+db.init_app(app)
+migrate = Migrate(app, db)
 
+with app.app_context():
+  db.create_all()
 
-@app.route("/")
-def index():
-  return render_template("index.html", title="トップページ")
+app.register_blueprint(main)
 
-
-
-# tutor_routes
-
-@tutor_routes.route("/")
-def tutor_main():
-  return render_template("tutor/main.html", title="講師トップ")
-
-@tutor_routes.route("/login")
-def tutor_login():
-  return render_template("tutor/login.html", title="講師ログイン")
-
-
-
-
-app.register_blueprint(tutor_routes)
 if __name__ == "__main__":
   app.run(debug=True)
