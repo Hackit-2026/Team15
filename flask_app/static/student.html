@@ -80,17 +80,71 @@
 
   /* --- 自分の記録 --- */
   .log-item {
-    display: flex;
-    align-items: center;
-    padding: 10px 0;
+    padding: 12px 0;
     border-bottom: 1px solid #eee;
     font-size: 17px;
+  }
+  .log-head {
+    display: flex;
+    align-items: center;
   }
   .log-time { width: 70px; color: #666; }
   .log-dot {
     width: 12px; height: 12px;
     border-radius: 50%;
     margin-right: 10px;
+    flex: none;
+  }
+
+  /* --- 進捗バー（講義100分のどのあたりか） --- */
+  .bar {
+    position: relative;
+    height: 6px;
+    background: #eee;
+    border-radius: 3px;
+    margin: 10px 0 0 22px;
+  }
+  .bar-mark {
+    position: absolute;
+    top: -3px;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    transform: translateX(-50%);
+    border: 2px solid #fff;
+    box-sizing: border-box;
+  }
+  .bar-ends {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: #aaa;
+    margin: 4px 0 0 22px;
+  }
+
+  /* --- メモ --- */
+  .memo {
+    width: calc(100% - 22px);
+    margin: 10px 0 0 22px;
+    box-sizing: border-box;
+    font-size: 15px;
+    font-family: inherit;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    resize: vertical;
+    min-height: 38px;
+  }
+  .memo::placeholder { color: #bbb; }
+
+  /* --- 仮データで動いているときの表示 --- */
+  #mockBanner {
+    background: #444;
+    color: #fff;
+    font-size: 13px;
+    text-align: center;
+    padding: 8px;
+    border-radius: 8px;
+    margin-bottom: 12px;
   }
 
   .sub {
@@ -156,6 +210,10 @@
 <!-- ③ メイン：ボタン3つ ＋ 自分の記録 -->
 <div class="screen" id="screenMain">
 
+  <div id="mockBanner" style="display:none">
+    仮データで動いています（サーバーには保存されません）
+  </div>
+
   <div class="card">
     <h2 id="lectureTitle">講義</h2>
 
@@ -171,6 +229,7 @@
 
   <div class="card">
     <h2>今日押した記録</h2>
+    <p class="note">授業のあとで、思い出せることをメモしておくと復習に使えます。</p>
     <div id="log"></div>
   </div>
 
@@ -250,6 +309,10 @@ async function startMain() {
   showScreen("screenMain");
   document.getElementById("myCode").textContent = clientId;
 
+  if (IS_MOCK) {
+    document.getElementById("mockBanner").style.display = "block";
+  }
+
   try {
     const s = await apiGet("/api/sessions/" + sid);
     document.getElementById("lectureTitle").textContent = s.title;
@@ -279,7 +342,7 @@ async function press(type) {
     });
     clearError();
 
-    myPresses.push({ type: type, elapsed_sec: res.elapsed_sec });
+    myPresses.push({ id: res.id, type: type, elapsed_sec: res.elapsed_sec });
     renderLog();
   } catch (e) {
     showError(e.message);
@@ -322,6 +385,9 @@ async function loadMyPresses() {
   renderLog();
 }
 
+// 画面に出ている順番の記録。メモの保存先を引くのに使う。
+let shownPresses = [];
+
 function renderLog() {
   const box = document.getElementById("log");
 
@@ -330,15 +396,43 @@ function renderLog() {
     return;
   }
 
-  const sorted = myPresses.slice().sort((a, b) => b.elapsed_sec - a.elapsed_sec);
+  shownPresses = myPresses.slice().sort((a, b) => b.elapsed_sec - a.elapsed_sec);
 
-  box.innerHTML = sorted.map(p => `
+  box.innerHTML = shownPresses.map((p, i) => {
+    // 100分の講義のどのあたりで押したか。はみ出さないよう0〜100%に収める。
+    const pct = Math.min(100, Math.max(0, p.elapsed_sec / LECTURE_MAX_SEC * 100));
+
+    return `
     <div class="log-item">
-      <div class="log-dot" style="background:${TYPE_COLOR[p.type]}"></div>
-      <div class="log-time">${fmtMin(p.elapsed_sec)}</div>
-      <div>${TYPE_LABEL[p.type]}</div>
+      <div class="log-head">
+        <div class="log-dot" style="background:${TYPE_COLOR[p.type]}"></div>
+        <div class="log-time">${fmtMin(p.elapsed_sec)}</div>
+        <div>${TYPE_LABEL[p.type]}</div>
+      </div>
+
+      <div class="bar">
+        <div class="bar-mark" style="left:${pct}%;background:${TYPE_COLOR[p.type]}"></div>
+      </div>
+      <div class="bar-ends"><span>開始</span><span>100分</span></div>
+
+      <textarea class="memo"
+                placeholder="メモ（何が分からなかった？）"
+                onchange="onMemoChange(${i}, this.value)">${escapeHtml(getMemo(sid, p))}</textarea>
     </div>
-  `).join("");
+  `;
+  }).join("");
+}
+
+function onMemoChange(i, text) {
+  const p = shownPresses[i];
+  if (p) saveMemo(sid, p, text.trim());
+}
+
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 }
 
 
