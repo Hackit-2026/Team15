@@ -8,13 +8,21 @@
     <script src="{{ url_for('static', filename='js/tutor-room.js') }}" defer></script>
 </head>
 <body data-room-id="{{ room_id }}">
-    <header>
-        <div class="ProductName">{{ app_name }} - {{ title }}</div>
-        <nav class="Navgation">
+    <header class="site-header">
+        <a class="product-name" href="{{ url_for('tutor.tutor_main') }}">{{ app_name }} - {{ title }}</a>
+        <nav class="navigation" aria-label="メインナビゲーション">
             <a href="{{ url_for('tutor.tutor_main') }}">ホーム</a>
             <a href="{{ url_for('tutor.tutor_main') }}">授業一覧</a>
-            <a href="{{ url_for('pages.mypage') }}"><span id="tutorUsername">講師</span>さん</a>
-            <a href="#" id="logoutLink">ログアウト</a>
+            <details class="account-menu">
+                <summary>
+                    <span id="tutorUsername">講師</span>さん
+                    <span class="account-menu__chevron" aria-hidden="true"></span>
+                </summary>
+                <div class="account-menu__panel">
+                    <a href="{{ url_for('pages.mypage') }}">マイページ</a>
+                    <button id="logoutLink" type="button">ログアウト</button>
+                </div>
+            </details>
         </nav>
     </header>
 
