@@ -3,25 +3,133 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{{ app_name }} 講師用ログイン">
     <link rel="stylesheet" href="{{ url_for('static', filename='tutor/login.css') }}">
     <title>{{ app_name }} - {{ title }}</title>
     <script src="{{ url_for('static', filename='js/tutor-login.js') }}" defer></script>
 </head>
 <body>
-    <main class="login-card">
-        <h1>{{ title }}</h1>
-        <p id="loginMessage" class="login-message" role="status"></p>
+    <main class="auth-stage" id="authStage">
+        <div class="auth-flipper">
+            <section class="auth-face auth-face--front" id="loginFace" aria-hidden="false">
+                <div class="auth-info">
+                    <div>
+                        <p class="auth-kicker">FOR TUTORS</p>
+                        <p class="auth-brand">{{ app_name }}</p>
+                        <h1>授業の「わからない」を<br>リアルタイムに。</h1>
+                        <p class="auth-description">受講者の反応を見ながら、より分かりやすい授業へ。</p>
+                    </div>
+                    <div class="auth-switch-copy">
+                        <p>はじめて利用しますか？</p>
+                        <button class="secondary-button" id="showRegisterButton" type="button">
+                            アカウントを作成
+                        </button>
+                    </div>
+                </div>
 
-        <form id="tutorLoginForm">
-            <label for="username">ユーザー名</label>
-            <input type="text" id="username" name="username" autocomplete="username" required>
+                <div class="auth-form-panel">
+                    <a class="back-link" href="{{ url_for('pages.index') }}">← トップへ戻る</a>
+                    <div class="auth-form-heading">
+                        <p class="form-kicker">WELCOME BACK</p>
+                        <h2>講師ログイン</h2>
+                        <p>登録済みのアカウントでログインしてください。</p>
+                    </div>
 
-            <label for="password">パスワード</label>
-            <input type="password" id="password" name="password" autocomplete="current-password" required>
+                    <form class="auth-form" id="tutorLoginForm">
+                        <div class="form-field">
+                            <label for="loginUsername">ユーザー名</label>
+                            <input
+                                id="loginUsername"
+                                name="username"
+                                type="text"
+                                autocomplete="username"
+                                placeholder="ユーザー名を入力"
+                                required
+                            >
+                        </div>
 
-            <button type="submit">ログイン</button>
-        </form>
-        <a href="{{ url_for('pages.register') }}">アカウントを作成</a>
+                        <div class="form-field">
+                            <label for="loginPassword">パスワード</label>
+                            <input
+                                id="loginPassword"
+                                name="password"
+                                type="password"
+                                autocomplete="current-password"
+                                placeholder="パスワードを入力"
+                                required
+                            >
+                        </div>
+
+                        <p class="form-message" id="loginMessage" role="status" aria-live="polite"></p>
+                        <button class="primary-button" type="submit">ログイン</button>
+                    </form>
+
+                    <button class="mobile-switch" id="showRegisterMobileButton" type="button">
+                        アカウントをお持ちでない方
+                    </button>
+                </div>
+            </section>
+
+            <section class="auth-face auth-face--back" id="registerFace" aria-hidden="true">
+                <div class="auth-info auth-info--register">
+                    <div>
+                        <p class="auth-kicker">GET STARTED</p>
+                        <p class="auth-brand">{{ app_name }}</p>
+                        <h1>あなたの授業を<br>ここから始めよう。</h1>
+                        <ul class="feature-list">
+                            <li>ルームをすぐに作成</li>
+                            <li>参加者用URLを簡単共有</li>
+                            <li>授業中の反応を確認</li>
+                        </ul>
+                    </div>
+                    <div class="auth-switch-copy">
+                        <p>すでにアカウントをお持ちですか？</p>
+                        <button class="secondary-button" id="showLoginButton" type="button">
+                            ログインへ戻る
+                        </button>
+                    </div>
+                </div>
+
+                <div class="auth-form-panel">
+                    <a class="back-link" href="{{ url_for('pages.index') }}">← トップへ戻る</a>
+                    <div class="auth-form-heading auth-form-heading--compact">
+                        <p class="form-kicker">CREATE ACCOUNT</p>
+                        <h2>アカウント作成</h2>
+                        <p>講師用アカウントの情報を入力してください。</p>
+                    </div>
+
+                    <form class="auth-form auth-form--register" id="tutorRegisterForm">
+                        <div class="form-field">
+                            <label for="registerUsername">ユーザー名</label>
+                            <input id="registerUsername" name="username" type="text" autocomplete="username" required>
+                        </div>
+
+                        <div class="form-field">
+                            <label for="registerEmail">メールアドレス</label>
+                            <input id="registerEmail" name="email" type="email" autocomplete="email" required>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-field">
+                                <label for="registerPassword">パスワード</label>
+                                <input id="registerPassword" name="password" type="password" autocomplete="new-password" required>
+                            </div>
+                            <div class="form-field">
+                                <label for="registerPasswordConfirm">パスワード（確認）</label>
+                                <input id="registerPasswordConfirm" type="password" autocomplete="new-password" required>
+                            </div>
+                        </div>
+
+                        <p class="form-message" id="registerMessage" role="status" aria-live="polite"></p>
+                        <button class="primary-button" type="submit">アカウントを作成</button>
+                    </form>
+
+                    <button class="mobile-switch" id="showLoginMobileButton" type="button">
+                        ログインへ戻る
+                    </button>
+                </div>
+            </section>
+        </div>
     </main>
 </body>
 </html>

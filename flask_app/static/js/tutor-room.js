@@ -8,6 +8,7 @@ const closeRoomButton = document.getElementById("closeRoomButton");
 const roomMessage = document.getElementById("roomMessage");
 const tutorUsername = document.getElementById("tutorUsername");
 const logoutLink = document.getElementById("logoutLink");
+const accountMenu = document.querySelector(".account-menu");
 
 async function loadTutor() {
     const response = await fetch("/api/");
@@ -78,6 +79,18 @@ logoutLink.addEventListener("click", async (event) => {
     event.preventDefault();
     await fetch("/api/logout", { method: "POST" });
     window.location.href = "/tutor/login";
+});
+
+document.addEventListener("click", (event) => {
+    if (!accountMenu.contains(event.target)) {
+        accountMenu.removeAttribute("open");
+    }
+});
+
+document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+        accountMenu.removeAttribute("open");
+    }
 });
 
 loadTutor().then((isLoggedIn) => {

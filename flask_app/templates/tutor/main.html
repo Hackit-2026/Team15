@@ -4,46 +4,211 @@
     <title>{{ app_name }} - {{ title }}</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{{ app_name }} 講師用ダッシュボード">
     <link rel="stylesheet" href="{{ url_for('static', filename='tutor/style.css') }}">
     <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
 </head>
 <body>
-    <header>
-        <div class="ProductName">{{ app_name }} - {{ title }}</div>
-        <nav class="Navgation">
-            <a href="{{ url_for('tutor.tutor_main') }}">ホーム</a>
-            <a href="#">授業一覧</a>
-            <a href="{{ url_for('pages.mypage') }}"><span id="tutorUsername">講師</span>さん</a>
-            <a href="#" id="logoutLink">ログアウト</a>
-        </nav>
-    </header>
-    <div class="content">
-        <section class="room-creator" id="roomCreator">
-            <button
-                class="room-creator__toggle"
-                id="roomCreatorToggle"
-                type="button"
-                aria-expanded="false"
-                aria-controls="roomCreatorForm"
-            >＋ ルームの作成</button>
-
-            <form class="room-creator__form" id="roomCreatorForm">
-                <label for="roomName">ルーム名</label>
-                <input
-                    id="roomName"
-                    name="name"
-                    type="text"
-                    placeholder="例：ネットワーク基礎"
-                    autocomplete="off"
-                    required
-                >
-                <div class="room-creator__actions">
-                    <button type="submit">作成</button>
-                    <button id="roomCreatorCancel" type="button">キャンセル</button>
+    <header class="site-header">
+        <a class="product-name" href="{{ url_for('tutor.tutor_main') }}">{{ app_name }}</a>
+        <nav class="navigation" aria-label="メインナビゲーション">
+            <a class="is-current" href="{{ url_for('tutor.tutor_main') }}">ホーム</a>
+            <a href="#recentRoomsSection">授業一覧</a>
+            <details class="account-menu">
+                <summary>
+                    <span id="headerTutorUsername">講師</span>さん
+                    <span class="account-menu__chevron" aria-hidden="true"></span>
+                </summary>
+                <div class="account-menu__panel">
+                    <a href="{{ url_for('pages.mypage') }}">マイページ</a>
+                    <button id="logoutLink" type="button">ログアウト</button>
                 </div>
-                <p class="room-creator__message" id="roomCreatorMessage" role="status"></p>
+            </details>
+        </nav>
+
+        <button
+            class="header-create-button"
+            type="button"
+            aria-expanded="false"
+            aria-controls="roomCreator"
+        >
+            <span class="header-create-button__icon" aria-hidden="true"></span>
+            <span class="header-create-button__label">ルームを作成</span>
+        </button>
+
+        <div class="room-creator-shell">
+            <section class="room-creator" id="roomCreator" aria-label="ルームを作成" aria-hidden="true">
+                <form class="room-creator__form" id="roomCreatorForm">
+                    <div class="form-field">
+                        <label for="roomName">ルーム名</label>
+                        <input
+                            id="roomName"
+                            name="name"
+                            type="text"
+                            placeholder="ルーム名を入力"
+                            autocomplete="off"
+                            required
+                        >
+                    </div>
+                    <div class="room-creator__actions">
+                        <button class="primary-button" type="submit">作成</button>
+                    </div>
+                    <p class="room-creator__message" id="roomCreatorMessage" role="status" aria-live="polite"></p>
+                </form>
+            </section>
+        </div>
+    </header>
+
+    <main class="content">
+        <section class="dashboard-heading">
+            <div>
+                <p class="section-kicker">TUTOR DASHBOARD</p>
+                <h1>こんにちは、<span id="dashboardTutorUsername">講師</span>さん</h1>
+                <p>開講中の授業と、これまでの反応を確認できます。</p>
+            </div>
+        </section>
+
+        <p class="dashboard-message" id="dashboardMessage" role="status" aria-live="polite"></p>
+
+        <section class="dashboard-section priority-section" aria-labelledby="activeRoomsTitle">
+            <div class="section-heading">
+                <div>
+                    <p class="section-kicker">LIVE</p>
+                    <h2 id="activeRoomsTitle">開講中の講義</h2>
+                </div>
+            </div>
+
+            <div class="loading-state" id="dashboardLoading">講義情報を読み込んでいます...</div>
+            <div class="active-room-list" id="activeRoomList" hidden></div>
+
+            <div class="empty-state" id="noActiveRoom" hidden>
+                <div class="empty-state__icon" aria-hidden="true">＋</div>
+                <h3>現在、開講中の講義はありません</h3>
+                <p>上の入力欄から新しいルームを作成し、授業を始めましょう。</p>
+            </div>
+
+            <div class="error-state" id="dashboardUnavailable" hidden>
+                <h3>講義情報を取得できませんでした</h3>
+                <p id="dashboardUnavailableMessage">時間をおいて再度お試しください。</p>
+                <button class="secondary-button" id="retryDashboardButton" type="button">再読み込み</button>
+            </div>
+        </section>
+
+        <section class="dashboard-section" aria-labelledby="overviewTitle">
+            <div class="section-heading">
+                <div>
+                    <p class="section-kicker">OVERVIEW</p>
+                    <h2 id="overviewTitle">授業の概要</h2>
+                </div>
+            </div>
+
+            <div class="overview-grid">
+                <article class="overview-card">
+                    <p>開講中の講義</p>
+                    <strong id="activeRoomCount">—</strong>
+                    <span>件</span>
+                </article>
+                <article class="overview-card">
+                    <p>累計リアクション</p>
+                    <strong id="totalReactionCount">—</strong>
+                    <span>件</span>
+                </article>
+                <article class="overview-card overview-card--wide">
+                    <p>最も「わからない」が多かった講義</p>
+                    <strong class="overview-card__room-name" id="mostConfusingRoomName">データなし</strong>
+                    <span id="mostConfusingRoomCount">—件の反応</span>
+                </article>
+            </div>
+        </section>
+
+        <section class="dashboard-section" id="recentRoomsSection" aria-labelledby="recentRoomsTitle">
+            <div class="section-heading">
+                <div>
+                    <p class="section-kicker">HISTORY</p>
+                    <h2 id="recentRoomsTitle">最近の授業</h2>
+                </div>
+            </div>
+
+            <div class="table-wrap" id="recentRoomTable" hidden>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>授業名</th>
+                            <th>ステータス</th>
+                            <th>リアクション</th>
+                            <th>実施日</th>
+                            <th><span class="visually-hidden">操作</span></th>
+                        </tr>
+                    </thead>
+                    <tbody id="recentRoomList"></tbody>
+                </table>
+            </div>
+            <p class="list-empty" id="recentRoomEmpty" hidden>まだ完了した授業はありません。</p>
+        </section>
+    </main>
+
+    <div class="mobile-room-creator-layer" id="mobileRoomCreatorLayer" aria-hidden="true">
+        <button class="mobile-room-creator-backdrop" id="mobileRoomCreatorBackdrop" type="button" tabindex="-1" aria-label="ルーム作成を閉じる"></button>
+        <section class="mobile-room-creator" aria-labelledby="mobileRoomCreatorTitle">
+            <div class="mobile-room-creator__heading">
+                <p class="section-kicker">NEW ROOM</p>
+                <h2 id="mobileRoomCreatorTitle">新しいルーム</h2>
+            </div>
+            <form class="mobile-room-creator__form" id="mobileRoomCreatorForm">
+                <div class="form-field">
+                    <label for="mobileRoomName">ルーム名</label>
+                    <input
+                        id="mobileRoomName"
+                        name="name"
+                        type="text"
+                        placeholder="ルーム名を入力"
+                        autocomplete="off"
+                        required
+                    >
+                </div>
+                <button class="primary-button" type="submit">作成</button>
+                <p class="mobile-room-creator__message" id="mobileRoomCreatorMessage" role="status" aria-live="polite"></p>
             </form>
         </section>
     </div>
+
+    <button
+        class="mobile-create-fab"
+        id="mobileRoomCreatorToggle"
+        type="button"
+        aria-label="ルームを作成"
+        aria-expanded="false"
+        aria-controls="mobileRoomCreatorLayer"
+    ><span class="mobile-create-fab__icon" aria-hidden="true"></span></button>
+
+    <template id="activeRoomTemplate">
+        <article class="active-room-card">
+            <div class="active-room-card__main">
+                <div>
+                    <span class="status-badge">開講中</span>
+                    <h3 class="js-room-name"></h3>
+                    <p class="active-room-card__meta">
+                        ルームID: <span class="js-room-id"></span>
+                        <span aria-hidden="true">·</span>
+                        リアクション <span class="js-reaction-count">0</span>件
+                    </p>
+                </div>
+                <div class="active-room-card__actions">
+                    <button class="secondary-button js-copy-room-url" type="button">URLをコピー</button>
+                    <a class="primary-button js-manage-room" href="#">管理画面を開く</a>
+                </div>
+            </div>
+        </article>
+    </template>
+
+    <template id="recentRoomRowTemplate">
+        <tr>
+            <td class="js-room-name"></td>
+            <td><span class="table-status js-room-status"></span></td>
+            <td><span class="js-reaction-count">0</span>件</td>
+            <td class="js-created-at">—</td>
+            <td><a class="table-link js-manage-room" href="#">詳細</a></td>
+        </tr>
+    </template>
 </body>
 </html>
