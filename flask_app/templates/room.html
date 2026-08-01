@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <h1>{{room.id}}</h1>
+  <h1>{{room.name}}</h1>
+  <!-- 講義が終了していたら -->
+  {% if room.isFinished %}
+  <h1>この講義は終了しています</h1>
+  <!-- 講義が終了していなかったら -->
+  {% else %}
+    <form method="post" action="{{ url_for('main.send_reaction', id=room.id) }}">
+      <button type="submit">わからん</button>
+    </form>
+  {% endif %}
+</body>
+</html>

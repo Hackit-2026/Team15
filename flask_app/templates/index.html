@@ -7,5 +7,28 @@
 </head>
 <body>
   <h1>Heeee</h1>
+
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      <ul>
+        {% for message in messages %}
+          <li>{{ message }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  {% endwith %}
+
+  {% if user %}
+    <p>{{ user.username }} さんとしてログイン中です。</p>
+    <p>
+      <a href="{{ url_for('main.mypage') }}">マイページ</a> |
+      <a href="{{ url_for('main.logout') }}">ログアウト</a>
+    </p>
+  {% else %}
+    <p>
+      <a href="{{ url_for('main.login') }}">ログイン</a> |
+      <a href="{{ url_for('main.register') }}">新規登録</a>
+    </p>
+  {% endif %}
 </body>
 </html>
