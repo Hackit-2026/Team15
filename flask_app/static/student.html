@@ -136,6 +136,52 @@
   }
   .memo::placeholder { color: #bbb; }
 
+  /* --- 講義名（タブの上に常に出す） --- */
+  .lecture-title {
+    font-size: 18px;
+    margin: 4px 4px 12px;
+  }
+
+  /* --- タブ（押す / 記録） --- */
+  /* 授業中は「押すだけ」にしたいので、記録は別タブに隠す。
+     授業の終了で切り替えると教員の操作待ちになってしまうため、
+     学生が自分で切り替えるタブにしている。 */
+  .tabs {
+    display: flex;
+    background: #fff;
+    border-radius: 12px;
+    padding: 4px;
+    margin-bottom: 16px;
+  }
+  .tab {
+    flex: 1;
+    padding: 12px;
+    font-size: 16px;
+    font-weight: bold;
+    font-family: inherit;
+    color: #888;
+    background: none;
+    border: none;
+    border-radius: 9px;
+    cursor: pointer;
+  }
+  .tab.active {
+    background: #333;
+    color: #fff;
+  }
+  .badge {
+    display: inline-block;
+    min-width: 18px;
+    padding: 0 5px;
+    margin-left: 6px;
+    font-size: 12px;
+    line-height: 18px;
+    border-radius: 9px;
+    background: #e05555;
+    color: #fff;
+  }
+  .tab.active .badge { background: #fff; color: #333; }
+
   /* --- 仮データで動いているときの表示 --- */
   #mockBanner {
     background: #444;
@@ -214,27 +260,38 @@
     仮データで動いています（サーバーには保存されません）
   </div>
 
-  <div class="card">
-    <h2 id="lectureTitle">講義</h2>
+  <h2 class="lecture-title" id="lectureTitle">講義</h2>
 
-    <button class="btn btn-wakaran" id="btn-wakaran" onclick="press('wakaran')">分からん</button>
-    <button class="btn btn-again"   id="btn-again"   onclick="press('again')">もう一回</button>
-    <button class="btn btn-fast"    id="btn-fast"    onclick="press('fast')">速い</button>
-
-    <p class="note" style="text-align:center">
-      押した記録が誰のものかは分かりません
-    </p>
-    <div id="error"></div>
+  <div class="tabs">
+    <button class="tab active" id="tabBtnPress" onclick="switchTab('press')">押す</button>
+    <button class="tab"        id="tabBtnLog"   onclick="switchTab('log')">記録<span class="badge" id="logCount" style="display:none">0</span></button>
   </div>
 
-  <div class="card">
-    <h2>今日押した記録</h2>
-    <p class="note">授業のあとで、思い出せることをメモしておくと復習に使えます。</p>
-    <div id="log"></div>
+  <!-- 「押す」タブ：授業中はこれだけ見えていればいい -->
+  <div id="tabPress">
+    <div class="card">
+      <button class="btn btn-wakaran" id="btn-wakaran" onclick="press('wakaran')">分からん</button>
+      <button class="btn btn-again"   id="btn-again"   onclick="press('again')">もう一回</button>
+      <button class="btn btn-fast"    id="btn-fast"    onclick="press('fast')">速い</button>
+
+      <p class="note" style="text-align:center">
+        押した記録が誰のものかは分かりません
+      </p>
+      <div id="error"></div>
+    </div>
   </div>
 
-  <div class="sub">
-    あなたのコード：<b id="myCode"></b>
+  <!-- 「記録」タブ：授業のあとで見る復習用 -->
+  <div id="tabLog" style="display:none">
+    <div class="card">
+      <h2>今日押した記録</h2>
+      <p class="note">授業のあとで、思い出せることをメモしておくと復習に使えます。</p>
+      <div id="log"></div>
+    </div>
+
+    <div class="sub">
+      あなたのコード：<b id="myCode"></b>
+    </div>
   </div>
 
 </div>
@@ -280,6 +337,15 @@ function showScreen(id) {
   document.getElementById(id).classList.add("active");
 }
 
+// 「押す」と「記録」の切り替え。授業中は「押す」だけを見せたいので既定は押す。
+function switchTab(name) {
+  const isPress = (name === "press");
+  document.getElementById("tabPress").style.display = isPress ? "block" : "none";
+  document.getElementById("tabLog").style.display   = isPress ? "none"  : "block";
+  document.getElementById("tabBtnPress").classList.toggle("active", isPress);
+  document.getElementById("tabBtnLog").classList.toggle("active", !isPress);
+}
+
 
 // ============================================
 // 匿名アカウントの作成 / 復元
@@ -314,8 +380,9 @@ async function startMain() {
   }
 
   try {
-    const s = await apiGet("/api/sessions/" + sid);
-    document.getElementById("lectureTitle").textContent = s.title;
+    // 部屋の情報を取る。返り値は {id, name, isFinished}
+    const s = await apiGet("/api/room/" + sid);
+    document.getElementById("lectureTitle").textContent = s.name;
   } catch (e) {
     showError(e.message);
   }
@@ -336,13 +403,21 @@ async function press(type) {
   startCooldown(btn, type);
 
   try {
-    const res = await apiPost("/api/sessions/" + sid + "/presses", {
+    const res = await apiPostForm("/api/reaction/" + sid, {
       type: type,
       client_id: clientId,
     });
     clearError();
 
-    myPresses.push({ id: res.id, type: type, elapsed_sec: res.elapsed_sec });
+    // 経過時間はサーバーが計算して返す（端末の時計はズレるため）。
+    // 万一返ってこなかった時だけ、この端末での暫定計算に落とす。
+    const p = {
+      id: res.reaction_id,
+      type: type,
+      elapsed_sec: res.elapsed_sec != null ? res.elapsed_sec : localElapsedSec(sid),
+    };
+    myPresses.push(p);
+    saveMyPressLocal(sid, clientId, p);   // 通信できない時のための控え
     renderLog();
   } catch (e) {
     showError(e.message);
@@ -376,11 +451,11 @@ function startCooldown(btn, type) {
 // ============================================
 async function loadMyPresses() {
   try {
-    myPresses = await apiGet(
-      "/api/sessions/" + sid + "/presses?client_id=" + clientId
-    );
+    // サーバーから自分の押した分だけ取る（別端末から復元した時もこれで揃う）
+    myPresses = await apiGet("/api/reaction/" + sid + "?client_id=" + clientId);
   } catch (e) {
-    myPresses = [];
+    // サーバーに繋がらない時はブラウザに残した控えを出す
+    myPresses = loadMyPressesLocal(sid, clientId);
   }
   renderLog();
 }
@@ -390,6 +465,11 @@ let shownPresses = [];
 
 function renderLog() {
   const box = document.getElementById("log");
+
+  // 「記録」タブを開かなくても何件たまったか分かるようにする
+  const badge = document.getElementById("logCount");
+  badge.textContent = myPresses.length;
+  badge.style.display = myPresses.length ? "inline-block" : "none";
 
   if (myPresses.length === 0) {
     box.innerHTML = '<p class="note">まだ押した記録はありません</p>';

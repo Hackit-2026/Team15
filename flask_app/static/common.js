@@ -140,104 +140,121 @@ async function apiPost(path, body) {
   return await res.json();
 }
 
+// フォーム形式でPOSTする。
+// バックエンドは request.form で読んでいる（JSONではない）ので、
+// 実際のAPIを叩くときはこちらを使うこと。
+async function apiPostForm(path, obj) {
+  if (IS_MOCK) return mockPost(path, obj || {});
+
+  const res = await fetch(API_BASE + path, {
+    method: "POST",
+    body: new URLSearchParams(obj || {}),
+  });
+  if (!res.ok) throw new Error("APIエラー " + res.status + " : " + path);
+  return await res.json();
+}
+
 
 // --------------------------------------------
-// 仮データ（?mock=1 のときだけ動く）
+// 経過時間（暫定：この端末の時計で計算）
 // --------------------------------------------
-// バックエンドのAPIが出来るまで、ここが代わりに応答する。
-// APIが出来たら ?mock=1 を外すだけで本物に切り替わる。
-// このブロックは最後に消していい。
+// 本来はサーバーが計算して返すべき値（設計判断どおり）。
+// ただ今のバックエンドは押した時刻をそもそも保存していないため、
+// サーバーが elapsed_sec を返すようになるまでの暫定として、
+// 「この端末でこの部屋を最初に開いた時刻」からの経過を使う。
+// 講義の途中で開いた人は 0分 から始まるズレがあるが、
+// 自分用の復習リストの並び・位置には十分。
 
-// 講義の開始時刻。初回に決めてブラウザに残す。
-function mockStartedAt(sid) {
-  const key = "mock_started_at:" + sid;
+function roomEnteredAt(sid) {
+  const key = "entered_at:" + sid;
   let v = null;
-  try {
-    v = localStorage.getItem(key);
-  } catch (e) {}
+  try { v = localStorage.getItem(key); } catch (e) {}
 
   if (!v) {
-    // 「講義が始まって40分たったところ」から始める。
-    // 0分スタートだと進捗バーの印が左端に張り付いて見た目を確認しづらいため。
-    v = String(Date.now() - 40 * 60 * 1000);
-    try {
-      localStorage.setItem(key, v);
-    } catch (e) {}
+    // 仮データモードでは「開始40分後」から始める。
+    // 0分だと進捗バーの印が左端に張り付いて見た目を確認しづらいため。
+    v = String(Date.now() - (IS_MOCK ? 40 * 60 * 1000 : 0));
+    try { localStorage.setItem(key, v); } catch (e) {}
   }
   return Number(v);
 }
 
-function mockElapsed(sid) {
-  return Math.floor((Date.now() - mockStartedAt(sid)) / 1000);
+function localElapsedSec(sid) {
+  return Math.floor((Date.now() - roomEnteredAt(sid)) / 1000);
 }
 
-function mockPresses(sid) {
+
+// --------------------------------------------
+// 自分が押した記録（ブラウザ保存）
+// --------------------------------------------
+// 自分の記録を取り出すAPIがまだ無いため、押すたびにブラウザにも残す。
+// APIが出来たら loadMyPressesLocal の呼び出し元を fetch に差し替える。
+
+function myPressesKey(sid, clientId) {
+  return "my_presses:" + sid + ":" + clientId;
+}
+
+function loadMyPressesLocal(sid, clientId) {
   try {
-    return JSON.parse(localStorage.getItem("mock_presses:" + sid) || "[]");
+    return JSON.parse(localStorage.getItem(myPressesKey(sid, clientId)) || "[]");
   } catch (e) {
     return [];
   }
 }
 
-function mockSavePresses(sid, list) {
+function saveMyPressLocal(sid, clientId, press) {
   try {
-    localStorage.setItem("mock_presses:" + sid, JSON.stringify(list));
-  } catch (e) {}
+    const list = loadMyPressesLocal(sid, clientId);
+    list.push(press);
+    localStorage.setItem(myPressesKey(sid, clientId), JSON.stringify(list));
+  } catch (e) {
+    // 保存できない環境では画面に出ている分だけで我慢する
+  }
+}
+
+
+// --------------------------------------------
+// 仮データ（?mock=1 のときだけ動く）
+// --------------------------------------------
+// サーバー無しでもボタンと復習リストの動きを確認できるようにする。
+// URLと返り値は実際のバックエンドとまったく同じ形にしてあるので、
+// ?mock=1 を外すだけで本物に切り替わる。
+
+function mockRoom(id) {
+  return { id: id, name: "情報セキュリティ（仮データ）", isFinished: false };
 }
 
 function mockGet(path) {
   const [rawPath, query] = path.split("?");
   const params = new URLSearchParams(query || "");
-  const parts = rawPath.split("/").filter(Boolean);   // ["api","sessions",sid,...]
-  const sid = parts[2];
+  const parts = rawPath.split("/").filter(Boolean);  // ["api","room","1"]
 
-  // GET /api/sessions/<sid>
-  if (parts.length === 3) {
-    return {
-      title: "情報セキュリティ（仮データ）",
-      is_active: true,
-      elapsed_sec: mockElapsed(sid),
-    };
+  // GET /api/room/<id> → 部屋の情報
+  if (parts[1] === "room") {
+    return mockRoom(parts[2]);
   }
 
-  // GET /api/sessions/<sid>/presses?client_id=xxx
-  if (parts[3] === "presses") {
-    const cid = params.get("client_id");
-    return mockPresses(sid)
-      .filter(p => p.client_id === cid)
+  // GET /api/reaction/<id>?client_id=xxx → 自分の押した分
+  // （ブラウザに残した控えをそのまま返す）
+  if (parts[1] === "reaction") {
+    return loadMyPressesLocal(parts[2], params.get("client_id"))
       .map(p => ({ id: p.id, type: p.type, elapsed_sec: p.elapsed_sec }));
-  }
-
-  // GET /api/sessions/<sid>/summary
-  if (parts[3] === "summary") {
-    const byMinute = {};
-    mockPresses(sid).forEach(p => {
-      const m = Math.floor(p.elapsed_sec / 60);
-      if (!byMinute[m]) byMinute[m] = { minute: m, wakaran: 0, again: 0, fast: 0 };
-      byMinute[m][p.type]++;
-    });
-    return Object.values(byMinute).sort((a, b) => a.minute - b.minute);
   }
 
   throw new Error("仮データに無いURL: " + path);
 }
 
+let mockNextId = 1;
+
 function mockPost(path, body) {
   const parts = path.split("/").filter(Boolean);
-  const sid = parts[2];
 
-  // POST /api/sessions/<sid>/presses
-  if (parts[3] === "presses") {
-    const list = mockPresses(sid);
-    const elapsed = mockElapsed(sid);
-    list.push({
-      id: list.length + 1,
-      type: body.type,
-      client_id: body.client_id,
-      elapsed_sec: elapsed,
-    });
-    mockSavePresses(sid, list);
-    return { ok: true, id: list.length, elapsed_sec: elapsed };
+  // POST /api/reaction/<id> → 実物と同じく部屋の情報＋elapsed_sec を返す
+  if (parts[1] === "reaction") {
+    const room = mockRoom(parts[2]);
+    room.reaction_id = mockNextId++;
+    room.elapsed_sec = localElapsedSec(parts[2]);
+    return room;
   }
 
   throw new Error("仮データに無いURL: " + path);
