@@ -8,17 +8,9 @@
 <body>
   <h1>新規登録</h1>
 
-  {% with messages = get_flashed_messages() %}
-    {% if messages %}
-      <ul>
-        {% for message in messages %}
-          <li>{{ message }}</li>
-        {% endfor %}
-      </ul>
-    {% endif %}
-  {% endwith %}
+  <div id="message"></div>
 
-  <form method="post">
+  <form id="register-form">
     <div>
       <label for="username">ユーザー名</label>
       <input type="text" id="username" name="username" required>
@@ -34,7 +26,21 @@
     <button type="submit">登録</button>
   </form>
 
-  <p><a href="{{ url_for('main.login') }}">ログインはこちら</a></p>
-  <p><a href="{{ url_for('main.index') }}">トップへ戻る</a></p>
+  <p><a href="/login">ログインはこちら</a></p>
+  <p><a href="/">トップへ戻る</a></p>
+
+  <script>
+    document.getElementById("register-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const res = await fetch("/api/register", { method: "POST", body: new FormData(e.target) });
+      const data = await res.json();
+
+      if (!res.ok) {
+        document.getElementById("message").textContent = data.error;
+        return;
+      }
+      window.location.href = "/login";
+    });
+  </script>
 </body>
 </html>

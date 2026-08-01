@@ -6,11 +6,29 @@
   <title>Document</title>
 </head>
 <body>
-  <h1>{{room.id}}</h1>
-  <h1>{{room.name}}</h1>
-  
-  <form method="post" action="{{ url_for('main.room_close', id=room.id) }}">
+  <h1 id="room-name"></h1>
+
+  <form id="close-form">
     <button type="submit">講義を終了する</button>
   </form>
+
+  <script>
+    const roomId = "{{ room_id }}";
+
+    async function loadRoom() {
+      const res = await fetch(`/api/room_setting/${roomId}`);
+      const data = await res.json();
+      document.getElementById("room-name").textContent = data.name;
+    }
+    loadRoom();
+
+    document.getElementById("close-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const form = new FormData();
+      form.append("is_finished", "true");
+      await fetch(`/api/room_close/${roomId}`, { method: "POST", body: form });
+      loadRoom();
+    });
+  </script>
 </body>
 </html>

@@ -8,17 +8,9 @@
 <body>
   <h1>ログイン</h1>
 
-  {% with messages = get_flashed_messages() %}
-    {% if messages %}
-      <ul>
-        {% for message in messages %}
-          <li>{{ message }}</li>
-        {% endfor %}
-      </ul>
-    {% endif %}
-  {% endwith %}
+  <div id="message"></div>
 
-  <form method="post">
+  <form id="login-form">
     <div>
       <label for="username">ユーザー名</label>
       <input type="text" id="username" name="username" required>
@@ -30,7 +22,21 @@
     <button type="submit">ログイン</button>
   </form>
 
-  <p><a href="{{ url_for('main.register') }}">新規登録はこちら</a></p>
-  <p><a href="{{ url_for('main.index') }}">トップへ戻る</a></p>
+  <p><a href="/register">新規登録はこちら</a></p>
+  <p><a href="/">トップへ戻る</a></p>
+
+  <script>
+    document.getElementById("login-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const res = await fetch("/api/login", { method: "POST", body: new FormData(e.target) });
+      const data = await res.json();
+
+      if (!res.ok) {
+        document.getElementById("message").textContent = data.error;
+        return;
+      }
+      window.location.href = "/";
+    });
+  </script>
 </body>
 </html>

@@ -8,18 +8,10 @@
 <body>
   <h1>ルーム作成</h1>
 
-  {% with messages = get_flashed_messages() %}
-    {% if messages %}
-      <ul>
-        {% for message in messages %}
-          <li>{{ message }}</li>
-        {% endfor %}
-      </ul>
-    {% endif %}
-  {% endwith %}
+  <div id="message"></div>
 
   <h2>部屋を作成</h2>
-  <form method="post" action="{{ url_for('main.create_room') }}">
+  <form id="create-room-form">
     <div>
       <label for="name">部屋名</label>
       <input type="text" id="name" name="name" required>
@@ -27,6 +19,20 @@
     <button type="submit">作成</button>
   </form>
 
-  <p><a href="{{ url_for('main.index') }}">トップへ戻る</a></p>
+  <p><a href="/">トップへ戻る</a></p>
+
+  <script>
+    document.getElementById("create-room-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const res = await fetch("/api/room", { method: "POST", body: new FormData(e.target) });
+      const data = await res.json();
+
+      if (!res.ok) {
+        document.getElementById("message").textContent = data.error;
+        return;
+      }
+      window.location.href = `/room/${data.id}`;
+    });
+  </script>
 </body>
 </html>

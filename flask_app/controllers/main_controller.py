@@ -1,22 +1,25 @@
 from functools import wraps
 
-from flask import Blueprint, flash, redirect, render_template, request, session, url_for
+from flask import Blueprint, jsonify, request, session
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from models import User, Room, Reaction, db
+from models import Reaction, Room, User, db
 
-main = Blueprint('main', __name__)
+main = Blueprint('main', __name__, url_prefix='/api')
 
 
 def login_required(view):
   @wraps(view)
   def wrapped_view(*args, **kwargs):
     if "user_id" not in session:
-      flash("ログインしてください")
-      return redirect(url_for("main.login"))
+      return jsonify({"error": "ログインしてください"}), 401
     return view(*args, **kwargs)
 
   return wrapped_view
+
+
+def room_to_dict(room):
+  return {"id": room.id, "name": room.name, "isFinished": room.isFinished}
 
 
 @main.route("/")
@@ -24,113 +27,107 @@ def index():
   user = None
   if "user_id" in session:
     user = db.session.get(User, session["user_id"])
-  return render_template("index.html", title="トップページ", user=user)
+  return jsonify({"user": {"id": user.id, "username": user.username} if user else None})
 
 
-@main.route("/register", methods=["GET", "POST"])
+@main.route("/register", methods=["POST"])
 def register():
-  if request.method == "POST":
-    email = request.form.get("email", "")
-    password = request.form.get("password", "")
-    username = request.form.get("username", "").strip()
+  email = request.form.get("email", "")
+  password = request.form.get("password", "")
+  username = request.form.get("username", "").strip()
 
-    if not username or not password:
-      flash("ユーザー名とパスワードを入力してください")
-      return render_template("register.html")
+  if not username or not password:
+    return jsonify({"error": "ユーザー名とパスワードを入力してください"}), 400
 
-    if User.query.filter_by(username=username).first() is not None:
-      flash("そのユーザー名は既に使われています")
-      return render_template("register.html")
-    
-    if User.query.filter_by(email=email).first() is not None:
-      flash("そのユーザー名は既に使われています")
-      return render_template("register.html")
+  if User.query.filter_by(username=username).first() is not None:
+    return jsonify({"error": "そのユーザー名は既に使われています"}), 400
 
-    user = User(username=username, password=generate_password_hash(password), email=email)
-    db.session.add(user)
-    db.session.commit()
-    flash("登録が完了しました。ログインしてください")
-    return redirect(url_for("main.login"))
+  if User.query.filter_by(email=email).first() is not None:
+    return jsonify({"error": "そのメールアドレスは既に使われています"}), 400
 
-  return render_template("register.html")
+  user = User(username=username, password=generate_password_hash(password), email=email)
+  db.session.add(user)
+  db.session.commit()
+  return jsonify({"id": user.id, "username": user.username}), 201
 
 
-@main.route("/login", methods=["GET", "POST"])
+@main.route("/login", methods=["POST"])
 def login():
-  if request.method == "POST":
-    username = request.form.get("username", "").strip()
-    password = request.form.get("password", "")
+  username = request.form.get("username", "").strip()
+  password = request.form.get("password", "")
 
-    user = User.query.filter_by(username=username).first()
-    if user is None or not check_password_hash(user.password, password):
-      flash("ユーザー名またはパスワードが間違っています")
-      return render_template("login.html")
+  user = User.query.filter_by(username=username).first()
+  if user is None or not check_password_hash(user.password, password):
+    return jsonify({"error": "ユーザー名またはパスワードが間違っています"}), 401
 
-    session["user_id"] = user.id
-    flash(f"{user.username} さん、ようこそ")
-    return redirect(url_for("main.index"))
-
-  return render_template("login.html")
+  session["user_id"] = user.id
+  return jsonify({"id": user.id, "username": user.username})
 
 
-@main.route("/logout")
+@main.route("/logout", methods=["POST"])
 def logout():
   session.pop("user_id", None)
-  flash("ログアウトしました")
-  return redirect(url_for("main.index"))
+  return jsonify({"message": "ログアウトしました"})
 
 
 @main.route("/mypage")
 @login_required
 def mypage():
   user = db.session.get(User, session["user_id"])
-  return render_template("mypage.html", user=user)
+  return jsonify({"id": user.id, "username": user.username, "email": user.email})
 
 
-@main.route("/room", methods=["GET", "POST"])
+@main.route("/room", methods=["POST"])
 @login_required
 def create_room():
-  if request.method == "POST":
-    name = request.form.get("name", "").strip()
-    if not name:
-      flash("部屋名を入力してください")
-      return redirect(url_for("main.index"))
-    room = Room(name=name, user_id=session["user_id"])
-    db.session.add(room)
-    db.session.commit()
-    flash(f"「{room.name}」を作成しました")
-  return render_template("create_room.html")
+  name = request.form.get("name", "").strip()
+  if not name:
+    return jsonify({"error": "部屋名を入力してください"}), 400
+
+  room = Room.create_room(name, session["user_id"])
+  return jsonify(room_to_dict(room)), 201
 
 
 @main.route('/room/<id>', methods=["GET", "POST"])
 def room(id):
+  room = Room.get_by_id(id)
+  if room is None:
+    return jsonify({"error": "部屋が見つかりません"}), 404
+
   if request.method == "POST":
-    isFnished = request.form.get("is_finished", "").strip()
-    if isFnished:
-      Room.close_room(id)
-    return render_template('room_setting.html', room=room)
-  elif request.method == "GET":
-    room = Room.get_by_id(id)
-  return render_template('room.html', room=room)
+    is_finished = request.form.get("is_finished", "").strip()
+    if is_finished:
+      room = Room.close_room(id)
+
+  return jsonify(room_to_dict(room))
 
 
 @main.route("/reaction/<id>", methods=["POST"])
 def send_reaction(id):
-  Reaction.create_reaction(id)
   room = Room.get_by_id(id)
-  return render_template('room.html', room=room)
+  if room is None:
+    return jsonify({"error": "部屋が見つかりません"}), 404
+
+  Reaction.create_reaction(id)
+  return jsonify(room_to_dict(room)), 201
 
 
-@main.route("/room_setting/<id>", methods=["GET"])
+@main.route("/room_setting/<id>")
 def room_setting(id):
   room = Room.get_by_id(id)
-  return render_template('room_setting.html', room=room)
+  if room is None:
+    return jsonify({"error": "部屋が見つかりません"}), 404
+  return jsonify(room_to_dict(room))
 
 
 @main.route("/room_close/<id>", methods=["POST"])
 def room_close(id):
   room = Room.get_by_id(id)
-  isFnished = request.form.get("is_finished", "").strip()
-  if isFnished:
-    Room.close_room(id)
-  return render_template('room_setting.html', room=room)
+  if room is None:
+    return jsonify({"error": "部屋が見つかりません"}), 404
+
+  is_finished = request.form.get("is_finished", "").strip()
+  if is_finished:
+    room = Room.close_room(id)
+
+  return jsonify(room_to_dict(room))
