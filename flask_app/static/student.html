@@ -231,7 +231,8 @@
     align-items: center;
   }
   .log-time {
-    width: 72px;
+    min-width: 72px;
+    margin-right: 14px;
     font-weight: 700;
     font-size: 17px;
   }
@@ -240,6 +241,16 @@
     border-radius: 50%;
     margin-right: 12px;
     flex: none;
+  }
+  /* 同じページを何度も押したときの回数 */
+  .count {
+    margin-left: auto;
+    padding: 3px 12px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--coral-deep);
+    background: #fdeceb;
+    border-radius: 999px;
   }
 
   /* --- 進捗バー（講義100分のどのあたりか） --- */
@@ -498,7 +509,11 @@
 let sid = null;            // 部屋ID（QRの ?sid=）
 let currentUser = null;    // ログイン中なら {id, username}、匿名なら null
 let myPresses = [];        // 自分が押した記録（ログイン中のみ使う）
-const COOLDOWN_SEC = 30;   // 連打防止の秒数
+let totalPages = null;     // スライドの総ページ数。未登録の講義では null
+
+// 連打について:
+// 以前は30秒のクールダウンを入れていたが、押したいときに押せないほうが
+// 問題という判断で撤去した。何回でも押せる。
 
 // ローカル控え（localStorage）の持ち主を表すキー
 function userKey() {
@@ -635,6 +650,8 @@ async function startMain() {
     showError(e.message);
   }
 
+  await loadTotalPages();
+
   if (currentUser) {
     loadMyPresses();
   } else {
@@ -664,35 +681,45 @@ function renderLoginStatus() {
 // ============================================
 async function press() {
   const type = PRESS_TYPES.WAKARAN;
-  const btn = document.getElementById("btn-" + type);
 
-  // すぐ反応を返す（体感速度が大事）
+  // すぐ反応を返す（体感速度が大事）。連打できるので待たせない。
   toast("記録しました");
   if (navigator.vibrate) navigator.vibrate(50);
   playRipple();
-  startCooldown(btn, type);
 
   try {
     // 誰が押したかはサーバーがセッションで判別する。
-    // type はサーバーが捨てているが、講義側が種類別の集計を求めているので
-    // 送るだけ送っておく（保存対応が入ればそのまま効き始める）。
+    // どのスライドを映していたかもサーバーが判定して page で返す。
     const res = await apiPostForm("/api/reaction/" + sid, { type: type });
     clearError();
 
     if (!currentUser) return;   // 匿名のときは手元に何も残さない
 
-    // 経過時間はサーバーが計算して返す（端末の時計はズレるため）。
-    // 万一返ってこなかった時だけ、この端末での暫定計算に落とす。
+    // page があればそれを使う。スライド未登録の講義では null が返るので、
+    // その場合だけ従来どおり経過時間で並べる。
     const p = {
       id: res.reaction_id,
       type: type,
-      elapsed_sec: res.elapsed_sec != null ? res.elapsed_sec : localElapsedSec(sid),
+      page: res.page != null ? res.page : null,
+      elapsed_sec: localElapsedSec(sid),
     };
     myPresses.push(p);
     saveMyPressLocal(sid, userKey(), p);   // 通信できない時のための控え
     renderLog();
   } catch (e) {
     showError(e.message);
+  }
+}
+
+
+// スライドの総ページ数を取る。進捗バーの分母に使う。
+// この講義でスライドを使っていなければ404が返るので、その時は null のまま。
+async function loadTotalPages() {
+  try {
+    const st = await apiGet("/api/room/" + sid + "/presentation/state");
+    totalPages = st.totalPages != null ? st.totalPages : null;
+  } catch (e) {
+    totalPages = null;
   }
 }
 
@@ -705,27 +732,6 @@ function playRipple() {
   wrap.classList.remove("is-pressed");
   void wrap.offsetWidth;
   wrap.classList.add("is-pressed");
-}
-
-
-// ============================================
-// 30秒クールダウン
-// ============================================
-function startCooldown(btn, type) {
-  btn.disabled = true;
-  let left = COOLDOWN_SEC;
-  btn.textContent = "あと" + left + "秒";
-
-  const t = setInterval(() => {
-    left--;
-    if (left <= 0) {
-      clearInterval(t);
-      btn.disabled = false;
-      btn.textContent = TYPE_LABEL[type];
-    } else {
-      btn.textContent = "あと" + left + "秒";
-    }
-  }, 1000);
 }
 
 
@@ -769,24 +775,39 @@ function renderLog() {
     return;
   }
 
-  shownPresses = myPresses.slice().sort((a, b) => b.elapsed_sec - a.elapsed_sec);
+  // 連打できるようにしたので、同じページを何度も押すと同じ行が並んでしまう。
+  // ページ単位でまとめて、回数を添える。メモもページごとに1つになる。
+  shownPresses = groupPresses(myPresses);
 
   box.innerHTML = shownPresses.map((p, i) => {
-    // 100分の講義のどのあたりで押したか。はみ出さないよう0〜100%に収める。
-    const pct = Math.min(100, Math.max(0, p.elapsed_sec / LECTURE_MAX_SEC * 100));
+    const isPage = p.page != null;
+
+    // ラベルと、バーのどのあたりに印を置くか。
+    // スライドがある講義はページ基準、無ければ従来どおり時間基準。
+    const label = isPage ? p.page + "ページ" : fmtMin(p.elapsed_sec);
+    const pct = isPage
+      ? (totalPages ? (p.page - 0.5) / totalPages * 100 : 50)
+      : p.elapsed_sec / LECTURE_MAX_SEC * 100;
+    const left  = isPage ? "1ページ" : "開始";
+    const right = isPage ? (totalPages ? totalPages + "ページ" : "最後") : "100分";
+
+    const count = p.count > 1
+      ? `<span class="count">${p.count}回</span>`
+      : "";
 
     return `
     <div class="log-item">
       <div class="log-head">
         <div class="log-dot" style="background:${TYPE_COLOR[p.type]}"></div>
-        <div class="log-time">${fmtMin(p.elapsed_sec)}</div>
+        <div class="log-time">${label}</div>
         <div>${TYPE_LABEL[p.type]}</div>
+        ${count}
       </div>
 
       <div class="bar">
-        <div class="bar-mark" style="left:${pct}%;background:${TYPE_COLOR[p.type]}"></div>
+        <div class="bar-mark" style="left:${Math.min(100, Math.max(0, pct))}%;background:${TYPE_COLOR[p.type]}"></div>
       </div>
-      <div class="bar-ends"><span>開始</span><span>100分</span></div>
+      <div class="bar-ends"><span>${left}</span><span>${right}</span></div>
 
       <textarea class="memo"
                 placeholder="メモ（何が分からなかった？）"
@@ -794,6 +815,32 @@ function renderLog() {
     </div>
   `;
   }).join("");
+}
+
+// 同じページの押下をひとまとめにする。
+// ページが取れていない記録（スライド未使用の講義）はまとめずそのまま出す。
+function groupPresses(list) {
+  const byPage = new Map();
+  const byMin = new Map();
+
+  list.forEach(p => {
+    // ページが取れていればページ単位、無ければ分単位でまとめる
+    const map = p.page != null ? byPage : byMin;
+    const key = p.page != null ? p.page : Math.floor(p.elapsed_sec / 60);
+
+    const hit = map.get(key);
+    if (hit) {
+      hit.count++;
+      // 進捗バーと並び順のため、そのまとまりで最初に押した時刻を残す
+      hit.elapsed_sec = Math.min(hit.elapsed_sec, p.elapsed_sec);
+    } else {
+      map.set(key, Object.assign({ count: 1 }, p));
+    }
+  });
+
+  // 新しく押したものを上に出す
+  return [...byPage.values()].sort((a, b) => b.page - a.page)
+    .concat([...byMin.values()].sort((a, b) => b.elapsed_sec - a.elapsed_sec));
 }
 
 function onMemoChange(i, text) {

@@ -57,9 +57,12 @@ function getSidFromUrl() {
 // この2つの中身をfetchに差し替えればいい。呼び出し側は変えなくて済む。
 
 // 記録1件を識別するキー。
-// 将来 press に id が付いたらそれを使う。無い間は種類＋経過秒で代用する。
+// スライドのページが取れていればページ単位で1つ。
+// 同じページを何度押しても、メモは1つにまとまる。
+// スライドを使わない講義ではページが無いので、従来どおり種類＋経過秒で代用する。
 function pressKey(sid, p) {
-  return "memo:" + sid + ":" + (p.id != null ? p.id : p.type + "@" + p.elapsed_sec);
+  if (p.page != null) return "memo:" + sid + ":page:" + p.page;
+  return "memo:" + sid + ":min:" + Math.floor(p.elapsed_sec / 60);
 }
 
 function getMemo(sid, p) {
@@ -149,6 +152,12 @@ function roomEnteredAt(sid) {
   let v = null;
   try { v = localStorage.getItem(key); } catch (e) {}
 
+  // 講義の長さより古い記録は、別の日に同じ部屋を開いたときの残骸とみなす。
+  // これが無いと「961分」のような現実にありえない値が出る。
+  if (v && Date.now() - Number(v) > LECTURE_MAX_SEC * 1000) {
+    v = null;
+  }
+
   if (!v) {
     // 仮データモードでは「開始40分後」から始める。
     // 0分だと進捗バーの印が左端に張り付いて見た目を確認しづらいため。
@@ -159,7 +168,8 @@ function roomEnteredAt(sid) {
 }
 
 function localElapsedSec(sid) {
-  return Math.floor((Date.now() - roomEnteredAt(sid)) / 1000);
+  // 初回は記録した瞬間との誤差でマイナスになりうるので0で止める
+  return Math.max(0, Math.floor((Date.now() - roomEnteredAt(sid)) / 1000));
 }
 
 
@@ -203,6 +213,12 @@ function mockRoom(id) {
   return { id: id, name: "情報セキュリティ（仮データ）", isFinished: false };
 }
 
+// 仮データの現在ページ。先生がめくっている様子を再現するため、
+// 30秒ごとに1ページ進む形にしてある（全20ページで折り返す）。
+function mockPage() {
+  return (Math.floor(Date.now() / 30000) % 20) + 1;
+}
+
 // 仮データのログイン状態。ブラウザに覚えさせて、リロードしても保つ。
 function mockLoadUser() {
   try {
@@ -230,6 +246,11 @@ function mockGet(path) {
   // GET /api/me → ログイン状態 {"user": {...} か null}
   if (parts[1] === "me") {
     return { user: mockLoadUser() };
+  }
+
+  // GET /api/room/<id>/presentation/state → スライドの状態
+  if (parts[1] === "room" && parts[3] === "presentation") {
+    return { presentationId: 1, roomId: parts[2], currentPage: mockPage(), totalPages: 20, status: "ready" };
   }
 
   // GET /api/room/<id> → 部屋の情報
@@ -265,11 +286,11 @@ function mockPost(path, body) {
     return { message: "ログアウトしました" };
   }
 
-  // POST /api/reaction/<id> → 実物と同じく部屋の情報＋elapsed_sec を返す
+  // POST /api/reaction/<id> → 実物と同じく部屋の情報＋page を返す
   if (parts[1] === "reaction") {
     const room = mockRoom(parts[2]);
     room.reaction_id = mockNextId++;
-    room.elapsed_sec = localElapsedSec(parts[2]);
+    room.page = mockPage();
     return room;
   }
 
