@@ -13,7 +13,7 @@
         <a class="product-name" href="{{ url_for('tutor.tutor_main') }}">{{ app_name }}</a>
         <nav class="navigation" aria-label="メインナビゲーション">
             <a class="is-current" href="{{ url_for('tutor.tutor_main') }}">ホーム</a>
-            <a href="#lectureRoomsSection">講義一覧</a>
+            <a href="{{ url_for('tutor.tutor_rooms') }}">講義一覧</a>
             <details class="account-menu">
                 <summary>
                     <span id="headerTutorUsername">講師</span>さん
