@@ -27,17 +27,6 @@
   .screen { display: none; }
   .screen.active { display: block; }
 
-  /* --- 匿名アカウントのコード --- */
-  .code {
-    font-size: 44px;
-    font-weight: bold;
-    letter-spacing: 6px;
-    text-align: center;
-    padding: 20px;
-    background: #f0f0f0;
-    border-radius: 10px;
-    margin: 16px 0;
-  }
   .note { font-size: 14px; color: #666; line-height: 1.7; }
 
   /* --- ボタン3つ --- */
@@ -60,6 +49,25 @@
   .btn-wakaran { background: #e05555; }
   .btn-again   { background: #e0a355; }
   .btn-fast    { background: #5580e0; }
+
+  /* --- 入口・ログインまわりのボタン --- */
+  .btn-login    { background: #333; }
+  .btn-register { background: #5580e0; }
+  .btn-anon     { background: #999; }
+
+  /* --- ログイン・登録フォーム --- */
+  .field {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 18px;
+    font-family: inherit;
+    padding: 12px;
+    margin-bottom: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+  }
+  .err { color: #c00; font-size: 14px; min-height: 1.2em; margin: 0 0 10px; }
 
   /* --- 押した直後のトースト --- */
   #toast {
@@ -201,59 +209,70 @@
   }
   .sub a { color: #888; }
 
-  input[type="text"] {
-    font-size: 24px;
-    padding: 12px;
-    width: 100%;
-    box-sizing: border-box;
-    text-align: center;
-    letter-spacing: 4px;
-    text-transform: uppercase;
-  }
   #error { color: #c00; font-size: 14px; }
 </style>
 </head>
 <body>
 
-<!-- ① 初回：匿名アカウントの作成 -->
-<div class="screen" id="screenCode">
+<!-- ① 入口：ログインするかどうか選ぶ（未ログインのときだけ出る） -->
+<div class="screen" id="screenChoice">
   <div class="card">
-    <h2>匿名アカウントを作成します</h2>
+    <h2>記録を残しますか？</h2>
     <p class="note">
-      名前もメールアドレスも登録しません。<br>
-      下のコードだけであなたの記録を管理します。
+      ログインすると、自分が押した記録が復習リストとして残ります。<br>
+      名前やメールアドレスは必要ありません。<br>
+      ログインしなくても押せます。その場合の記録は完全に匿名です。
     </p>
 
-    <div class="code" id="newCode">------</div>
+    <button class="btn btn-login"    onclick="showScreen('screenLogin')">ログインして記録を残す</button>
+    <button class="btn btn-register" onclick="showScreen('screenRegister')">新規登録する</button>
+    <button class="btn btn-anon"     onclick="useAnonymous()">ログインせずに使う</button>
+  </div>
+</div>
 
-    <p class="note">
-      別の端末から自分の記録を見たいときに使います。<br>
-      スクリーンショットを撮っておいてください。
-    </p>
 
-    <button class="btn btn-wakaran" onclick="createAccount()">これで始める</button>
+<!-- ② ログイン -->
+<div class="screen" id="screenLogin">
+  <div class="card">
+    <h2>ログイン</h2>
+    <form onsubmit="doLogin(); return false;">
+      <input class="field" type="text"     id="loginUsername" placeholder="ユーザー名" autocomplete="username">
+      <input class="field" type="password" id="loginPassword" placeholder="パスワード" autocomplete="current-password">
+      <p class="err" id="loginError"></p>
+      <button class="btn btn-login" type="submit">ログイン</button>
+    </form>
     <div class="sub">
-      <a href="#" onclick="showScreen('screenRestore');return false;">すでにコードを持っている</a>
+      <a href="#" onclick="showScreen('screenRegister');return false;">アカウントを作る</a>
+      <a href="#" onclick="showScreen('screenChoice');return false;">戻る</a>
     </div>
   </div>
 </div>
 
 
-<!-- ② コードで復元 -->
-<div class="screen" id="screenRestore">
+<!-- ③ 新規登録 -->
+<div class="screen" id="screenRegister">
   <div class="card">
-    <h2>コードを入力</h2>
-    <input type="text" id="restoreInput" placeholder="ABC123" maxlength="6">
-    <br><br>
-    <button class="btn btn-wakaran" onclick="restoreAccount()">復元する</button>
+    <h2>新規登録</h2>
+    <p class="note">
+      ユーザー名とパスワードだけで登録できます。<br>
+      本名でなくて構いません。
+    </p>
+    <form onsubmit="doRegister(); return false;">
+      <input class="field" type="text"     id="regUsername" placeholder="ユーザー名" autocomplete="username">
+      <input class="field" type="password" id="regPassword" placeholder="パスワード" autocomplete="new-password">
+      <input class="field" type="email"    id="regEmail"    placeholder="メールアドレス（任意）" autocomplete="email">
+      <p class="err" id="regError"></p>
+      <button class="btn btn-register" type="submit">登録して始める</button>
+    </form>
     <div class="sub">
-      <a href="#" onclick="showScreen('screenCode');return false;">戻る</a>
+      <a href="#" onclick="showScreen('screenLogin');return false;">ログインはこちら</a>
+      <a href="#" onclick="showScreen('screenChoice');return false;">戻る</a>
     </div>
   </div>
 </div>
 
 
-<!-- ③ メイン：ボタン3つ ＋ 自分の記録 -->
+<!-- ④ メイン：ボタン3つ ＋ 自分の記録 -->
 <div class="screen" id="screenMain">
 
   <div id="mockBanner" style="display:none">
@@ -274,9 +293,7 @@
       <button class="btn btn-again"   id="btn-again"   onclick="press('again')">もう一回</button>
       <button class="btn btn-fast"    id="btn-fast"    onclick="press('fast')">速い</button>
 
-      <p class="note" style="text-align:center">
-        押した記録が誰のものかは分かりません
-      </p>
+      <p class="note" style="text-align:center" id="pressNote"></p>
       <div id="error"></div>
     </div>
   </div>
@@ -288,11 +305,9 @@
       <p class="note">授業のあとで、思い出せることをメモしておくと復習に使えます。</p>
       <div id="log"></div>
     </div>
-
-    <div class="sub">
-      あなたのコード：<b id="myCode"></b>
-    </div>
   </div>
+
+  <div class="sub" id="loginStatus"></div>
 
 </div>
 
@@ -304,16 +319,21 @@
 // ============================================
 // 状態
 // ============================================
-let sid = null;            // セッションID
-let clientId = null;       // 匿名アカウントのコード
-let myPresses = [];        // 自分が押した記録
+let sid = null;            // 部屋ID（QRの ?sid=）
+let currentUser = null;    // ログイン中なら {id, username}、匿名なら null
+let myPresses = [];        // 自分が押した記録（ログイン中のみ使う）
 const COOLDOWN_SEC = 30;   // 連打防止の秒数
+
+// ローカル控え（localStorage）の持ち主を表すキー
+function userKey() {
+  return "user:" + currentUser.id;
+}
 
 
 // ============================================
 // 起動時
 // ============================================
-window.onload = function () {
+window.onload = async function () {
   sid = getSidFromUrl();
 
   if (!sid) {
@@ -322,13 +342,19 @@ window.onload = function () {
     return;
   }
 
-  clientId = getClientId();
+  // ログイン状態を確認する。GET /api/me が
+  // {"user": {id, username, ...}} か {"user": null} を返す。
+  try {
+    const me = await apiGet("/api/me");
+    currentUser = me.user;
+  } catch (e) {
+    currentUser = null;   // サーバーに繋がらなくても匿名で押す画面までは行ける
+  }
 
-  if (clientId) {
-    startMain();                                  // 2回目以降
+  if (currentUser) {
+    startMain();
   } else {
-    document.getElementById("newCode").textContent = genCode();
-    showScreen("screenCode");                     // 初回
+    showScreen("screenChoice");
   }
 };
 
@@ -348,23 +374,68 @@ function switchTab(name) {
 
 
 // ============================================
-// 匿名アカウントの作成 / 復元
+// ログイン / 登録 / 匿名で使う
 // ============================================
-function createAccount() {
-  clientId = document.getElementById("newCode").textContent;
-  saveClientId(clientId);
+async function doLogin() {
+  const username = document.getElementById("loginUsername").value.trim();
+  const password = document.getElementById("loginPassword").value;
+  const errEl = document.getElementById("loginError");
+
+  if (!username || !password) {
+    errEl.textContent = "ユーザー名とパスワードを入力してください";
+    return;
+  }
+
+  try {
+    currentUser = await apiPostForm("/api/login", { username: username, password: password });
+    errEl.textContent = "";
+    startMain();
+  } catch (e) {
+    errEl.textContent = e.message;
+  }
+}
+
+async function doRegister() {
+  const username = document.getElementById("regUsername").value.trim();
+  const password = document.getElementById("regPassword").value;
+  let email = document.getElementById("regEmail").value.trim();
+  const errEl = document.getElementById("regError");
+
+  if (!username || !password) {
+    errEl.textContent = "ユーザー名とパスワードを入力してください";
+    return;
+  }
+
+  // バックエンドが email の重複を弾くため、空のまま2人目が登録すると
+  // 「既に使われています」になってしまう。空欄のときはユーザー名から
+  // 一意なダミーを作って回避する（username が unique なので衝突しない）。
+  if (!email) {
+    email = username + "@no-email.local";
+  }
+
+  try {
+    await apiPostForm("/api/register", { username: username, email: email, password: password });
+    // register はセッションを作らないので、続けてログインする
+    currentUser = await apiPostForm("/api/login", { username: username, password: password });
+    errEl.textContent = "";
+    startMain();
+  } catch (e) {
+    errEl.textContent = e.message;
+  }
+}
+
+function useAnonymous() {
+  currentUser = null;
   startMain();
 }
 
-function restoreAccount() {
-  const v = document.getElementById("restoreInput").value.trim().toUpperCase();
-  if (v.length !== 6) {
-    alert("6桁のコードを入力してください");
-    return;
+async function logout() {
+  try {
+    await apiPostForm("/api/logout", {});
+  } catch (e) {
+    // ログアウトの失敗は握りつぶしてよい（リロードで状態が揃う）
   }
-  clientId = v;
-  saveClientId(clientId);
-  startMain();
+  location.reload();
 }
 
 
@@ -373,7 +444,8 @@ function restoreAccount() {
 // ============================================
 async function startMain() {
   showScreen("screenMain");
-  document.getElementById("myCode").textContent = clientId;
+  switchTab("press");   // どの経路から来ても、授業中の既定は「押す」
+  renderLoginStatus();
 
   if (IS_MOCK) {
     document.getElementById("mockBanner").style.display = "block";
@@ -387,7 +459,27 @@ async function startMain() {
     showError(e.message);
   }
 
-  loadMyPresses();
+  if (currentUser) {
+    loadMyPresses();
+  } else {
+    renderLog();
+  }
+}
+
+function renderLoginStatus() {
+  const el = document.getElementById("loginStatus");
+  const note = document.getElementById("pressNote");
+
+  if (currentUser) {
+    el.innerHTML = 'ログイン中：<b></b>　' +
+      '<a href="#" onclick="logout();return false;">ログアウト</a>';
+    el.querySelector("b").textContent = currentUser.username;
+    note.textContent = "押した記録はあなたの復習リストに残ります";
+  } else {
+    el.innerHTML = '匿名で利用中　' +
+      '<a href="#" onclick="showScreen(\'screenChoice\');return false;">ログインする</a>';
+    note.textContent = "ログインしていないので、押した記録は完全に匿名です";
+  }
 }
 
 
@@ -403,11 +495,12 @@ async function press(type) {
   startCooldown(btn, type);
 
   try {
-    const res = await apiPostForm("/api/reaction/" + sid, {
-      type: type,
-      client_id: clientId,
-    });
+    // 誰が押したかはサーバーがセッションで判別する。
+    // type は現状サーバーが捨てるが、保存対応が入り次第そのまま効き始める。
+    const res = await apiPostForm("/api/reaction/" + sid, { type: type });
     clearError();
+
+    if (!currentUser) return;   // 匿名のときは手元に何も残さない
 
     // 経過時間はサーバーが計算して返す（端末の時計はズレるため）。
     // 万一返ってこなかった時だけ、この端末での暫定計算に落とす。
@@ -417,7 +510,7 @@ async function press(type) {
       elapsed_sec: res.elapsed_sec != null ? res.elapsed_sec : localElapsedSec(sid),
     };
     myPresses.push(p);
-    saveMyPressLocal(sid, clientId, p);   // 通信できない時のための控え
+    saveMyPressLocal(sid, userKey(), p);   // 通信できない時のための控え
     renderLog();
   } catch (e) {
     showError(e.message);
@@ -451,11 +544,12 @@ function startCooldown(btn, type) {
 // ============================================
 async function loadMyPresses() {
   try {
-    // サーバーから自分の押した分だけ取る（別端末から復元した時もこれで揃う）
-    myPresses = await apiGet("/api/reaction/" + sid + "?client_id=" + clientId);
+    // 取り出しAPIはバックエンドに依頼中で、まだ存在しない。
+    // 出来るまでは失敗して下の控えに落ちる（出来たら自動で切り替わる）。
+    myPresses = await apiGet("/api/reaction/" + sid + "?user_id=" + currentUser.id);
   } catch (e) {
-    // サーバーに繋がらない時はブラウザに残した控えを出す
-    myPresses = loadMyPressesLocal(sid, clientId);
+    // サーバーから取れない時はブラウザに残した控えを出す
+    myPresses = loadMyPressesLocal(sid, userKey());
   }
   renderLog();
 }
@@ -465,9 +559,18 @@ let shownPresses = [];
 
 function renderLog() {
   const box = document.getElementById("log");
+  const badge = document.getElementById("logCount");
+
+  // 匿名のときは記録が残らないことを伝えるだけ
+  if (!currentUser) {
+    badge.style.display = "none";
+    box.innerHTML =
+      '<p class="note">ログインすると、押した記録がここに残って復習に使えます。</p>' +
+      '<div class="sub"><a href="#" onclick="showScreen(\'screenChoice\');return false;">ログイン・登録はこちら</a></div>';
+    return;
+  }
 
   // 「記録」タブを開かなくても何件たまったか分かるようにする
-  const badge = document.getElementById("logCount");
   badge.textContent = myPresses.length;
   badge.style.display = myPresses.length ? "inline-block" : "none";
 
