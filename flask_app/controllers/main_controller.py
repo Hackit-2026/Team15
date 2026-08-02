@@ -91,6 +91,17 @@ def create_room():
   return jsonify(room_to_dict(room)), 201
 
 
+@main.route("/rooms", methods=["GET"])
+@login_required
+def list_rooms():
+  user_id = request.args.get("user_id", "").strip()
+  if not user_id:
+    return jsonify({"error": "user_idを指定してください"}), 400
+
+  rooms = Room.get_all_by_user_id(user_id)
+  return jsonify([room_to_dict(room) for room in rooms])
+
+
 @main.route('/room/<id>', methods=["GET", "POST"])
 def room(id):
   room = Room.get_by_id(id)

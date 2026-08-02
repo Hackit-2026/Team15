@@ -47,6 +47,10 @@ class Room(db.Model):
     db.session.commit()
     return room
 
+  @classmethod
+  def get_all_by_user_id(cls, user_id):
+    return cls.query.filter_by(user_id=user_id).all()
+
 
 class Reaction(db.Model):
   __tablename__ = 'reactions'
