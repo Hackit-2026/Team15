@@ -50,5 +50,5 @@ def tutor_room_presentation(room_id):
 def tutor_rooms():
   return render_template(
     "tutor/rooms.html",
-    title="科目一覧",
+    title="講義一覧",
   )
