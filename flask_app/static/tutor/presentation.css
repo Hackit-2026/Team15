@@ -170,6 +170,105 @@ button:disabled {
     margin-top: 28px;
 }
 
+.effect-settings-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 12px;
+}
+
+.effect-settings-bar span {
+    color: var(--muted);
+    font-size: 0.78rem;
+}
+
+.effect-settings-toggle,
+.effect-settings-actions button {
+    min-height: 38px;
+    padding: 8px 16px;
+    border: 1px solid var(--line);
+    border-radius: var(--control-radius);
+    background: var(--surface);
+    color: var(--ink);
+    font-weight: 700;
+}
+
+.effect-settings-toggle:hover,
+.effect-settings-actions button:hover {
+    border-color: var(--primary);
+}
+
+.effect-settings-panel {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px 18px;
+    margin-bottom: 16px;
+    padding: 20px;
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    background: var(--surface);
+    box-shadow: 0 12px 28px rgba(16, 23, 38, 0.08);
+}
+
+.effect-switch {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-height: 42px;
+    font-size: 0.88rem;
+    font-weight: 650;
+}
+
+.effect-switch input {
+    width: 19px;
+    height: 19px;
+    accent-color: var(--primary);
+}
+
+.effect-switch--danger input {
+    accent-color: var(--danger);
+}
+
+.threshold-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.88rem;
+    font-weight: 700;
+}
+
+.threshold-field input {
+    width: 76px;
+    min-height: 38px;
+    padding: 6px 10px;
+    border: 1px solid var(--line);
+    border-radius: var(--control-radius);
+    text-align: center;
+}
+
+.effect-settings-actions {
+    display: flex;
+    flex-wrap: wrap;
+    grid-column: 2 / -1;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.effect-settings-actions .effect-save {
+    border-color: var(--primary);
+    background: var(--primary);
+    color: white;
+}
+
+#effectSettingsMessage {
+    grid-column: 1 / -1;
+    min-height: 1.2em;
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.8rem;
+}
+
 .presentation-stage {
     display: grid;
     grid-template-rows: minmax(0, 1fr) auto;
@@ -183,6 +282,7 @@ button:disabled {
 }
 
 .slide-viewport {
+    position: relative;
     display: grid;
     min-width: 0;
     min-height: 0;
@@ -197,6 +297,121 @@ button:disabled {
     max-height: 100%;
     background: white;
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.24);
+}
+
+#slideCanvas.is-shattering {
+    visibility: hidden;
+}
+
+#slideCanvas.is-reduced-destruction {
+    animation: reduced-destruction 0.45s ease;
+}
+
+.reaction-emoji-layer,
+.slide-destruction-layer,
+.slide-crack-layer {
+    position: absolute;
+    z-index: 3;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.slide-crack-layer {
+    z-index: 2;
+    opacity: 0;
+    background:
+        linear-gradient(132deg, transparent 46%, rgba(23, 32, 51, 0.72) 47%, transparent 48%) 54% 18% / 170px 210px no-repeat,
+        linear-gradient(48deg, transparent 46%, rgba(23, 32, 51, 0.58) 47%, transparent 48%) 45% 49% / 230px 180px no-repeat;
+    transition: opacity 0.25s ease;
+}
+
+.slide-crack-layer.is-visible {
+    opacity: 0.55;
+}
+
+.slide-crack-layer.is-severe {
+    opacity: 1;
+    background:
+        linear-gradient(132deg, transparent 46%, rgba(23, 32, 51, 0.78) 47%, transparent 48%) 54% 18% / 170px 210px no-repeat,
+        linear-gradient(48deg, transparent 46%, rgba(23, 32, 51, 0.68) 47%, transparent 48%) 45% 49% / 230px 180px no-repeat,
+        linear-gradient(76deg, transparent 46%, rgba(23, 32, 51, 0.64) 47%, transparent 48%) 70% 55% / 260px 220px no-repeat;
+}
+
+.reaction-emoji-layer {
+    z-index: 4;
+}
+
+.reaction-emoji {
+    position: absolute;
+    bottom: -54px;
+    left: var(--emoji-x);
+    font-size: clamp(2.2rem, 5vw, 4.6rem);
+    filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.28));
+    animation: emoji-rise 2.25s cubic-bezier(0.22, 0.72, 0.24, 1) forwards;
+}
+
+.reaction-meter {
+    position: absolute;
+    z-index: 5;
+    top: 16px;
+    right: 18px;
+    padding: 8px 13px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--control-radius);
+    background: rgba(9, 13, 22, 0.68);
+    color: white;
+    font-size: 0.82rem;
+    font-weight: 800;
+    backdrop-filter: blur(10px);
+    transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.reaction-meter.is-threshold-reached {
+    background: rgba(196, 60, 77, 0.88);
+    transform: scale(1.05);
+}
+
+.destruction-surface {
+    position: absolute;
+    perspective: 900px;
+}
+
+.slide-shard {
+    position: absolute;
+    background-repeat: no-repeat;
+    animation: shard-fall 1.5s cubic-bezier(0.3, 0.05, 0.72, 0.28) var(--shard-delay) forwards;
+    will-change: transform, opacity;
+}
+
+@keyframes emoji-rise {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, 0) scale(0.5);
+    }
+    18% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+        transform: translate(calc(-50% + var(--emoji-drift)), -72vh) scale(var(--emoji-scale)) rotate(12deg);
+    }
+}
+
+@keyframes shard-fall {
+    0% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) rotate(0);
+    }
+    100% {
+        opacity: 0;
+        transform: translate3d(var(--shard-x), var(--shard-y), 120px) rotate(var(--shard-rotation));
+    }
+}
+
+@keyframes reduced-destruction {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.2; }
 }
 
 .presentation-controls {
@@ -279,6 +494,26 @@ button:disabled {
         padding: 22px 14px 50px;
     }
 
+    .effect-settings-bar {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 7px;
+    }
+
+    .effect-settings-panel {
+        grid-template-columns: minmax(0, 1fr);
+        padding: 18px;
+    }
+
+    .effect-settings-actions,
+    #effectSettingsMessage {
+        grid-column: 1;
+    }
+
+    .effect-settings-actions {
+        justify-content: flex-start;
+    }
+
     .pdf-upload-panel {
         grid-template-columns: minmax(0, 1fr);
         gap: 20px;
@@ -294,6 +529,11 @@ button:disabled {
 
     .slide-viewport {
         padding: 10px;
+    }
+
+    .reaction-meter {
+        top: 10px;
+        right: 10px;
     }
 
     .presentation-controls {

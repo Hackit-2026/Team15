@@ -4,6 +4,10 @@ import { enterFullscreen, exitFullscreen, toggleFullscreen } from "./fullscreen"
 import { bindPresentationKeyboard } from "./keyboard";
 import { clampPage } from "./navigation";
 import { PdfDocumentLoader } from "./pdf-document";
+import { EffectSettingsClient } from "./effect-settings-client";
+import { DEFAULT_EFFECT_SETTINGS, type EffectSettings } from "./effect-types";
+import { PresentationEffects } from "./presentation-effects";
+import { ReactionRealtimeClient } from "./reaction-realtime";
 import { SlideRenderer } from "./slide-renderer";
 import { BrowserEventSlideSync } from "./slide-sync";
 import type { PresentationState, SlideChangeEvent, SlideSyncAdapter } from "./types";
@@ -27,6 +31,10 @@ class PdfPresentationController {
   private readonly loader = new PdfDocumentLoader();
   private readonly renderer: SlideRenderer;
   private readonly sync: SlideSyncAdapter = new BrowserEventSlideSync();
+  private readonly effects: PresentationEffects;
+  private readonly effectSettingsClient: EffectSettingsClient;
+  private readonly reactionRealtime: ReactionRealtimeClient;
+  private effectSettings: EffectSettings = { ...DEFAULT_EFFECT_SETTINGS };
   private document: PDFDocumentProxy | null = null;
   private loadVersion = 0;
   private resizeFrame = 0;
@@ -49,9 +57,36 @@ class PdfPresentationController {
   private readonly startButton = getElement<HTMLButtonElement>("startPresentation");
   private readonly fullscreenButton = getElement<HTMLButtonElement>("toggleFullscreen");
   private readonly endButton = getElement<HTMLButtonElement>("endPresentation");
+  private readonly effectSettingsToggle = getElement<HTMLButtonElement>("effectSettingsToggle");
+  private readonly effectSettingsPanel = getElement<HTMLFormElement>("effectSettingsPanel");
+  private readonly emojiEffectEnabled = getElement<HTMLInputElement>("emojiEffectEnabled");
+  private readonly crackEffectEnabled = getElement<HTMLInputElement>("crackEffectEnabled");
+  private readonly destructionEnabled = getElement<HTMLInputElement>("destructionEnabled");
+  private readonly destructionThreshold = getElement<HTMLInputElement>("destructionThreshold");
+  private readonly previewReactionButton = getElement<HTMLButtonElement>("previewReaction");
+  private readonly previewDestructionButton = getElement<HTMLButtonElement>("previewDestruction");
+  private readonly effectSettingsMessage = getElement<HTMLElement>("effectSettingsMessage");
+  private readonly effectConnectionStatus = getElement<HTMLElement>("effectConnectionStatus");
 
-  constructor(private readonly presentationId: string) {
+  constructor(
+    private readonly roomId: string,
+    private readonly presentationId: string,
+  ) {
     this.renderer = new SlideRenderer(this.canvas, this.viewport);
+    this.effectSettingsClient = new EffectSettingsClient(this.presentationId);
+    this.effects = new PresentationEffects(
+      this.viewport,
+      this.canvas,
+      getElement<HTMLElement>("reactionEmojiLayer"),
+      getElement<HTMLElement>("slideDestructionLayer"),
+      getElement<HTMLElement>("slideCrackLayer"),
+      getElement<HTMLElement>("reactionMeter"),
+    );
+    this.effects.updateSettings(this.effectSettings);
+    this.reactionRealtime = new ReactionRealtimeClient(this.roomId, {
+      onReaction: (event) => this.effects.handleReaction(event),
+      onDestroyed: (event) => this.effects.handleDestroyed(event),
+    });
     this.removeKeyboardListener = bindPresentationKeyboard(
       {
         next: () => this.goToNextPage(),
@@ -64,6 +99,8 @@ class PdfPresentationController {
       () => this.document !== null && !this.state.isLoading,
     );
     this.bindEvents();
+    this.syncSettingsForm();
+    void this.loadEffectSettings();
     this.updateUi();
   }
 
@@ -99,6 +136,18 @@ class PdfPresentationController {
     this.startButton.addEventListener("click", () => void this.startPresentation());
     this.fullscreenButton.addEventListener("click", () => void this.toggleFullscreen());
     this.endButton.addEventListener("click", () => void this.endPresentation());
+
+    this.effectSettingsToggle.addEventListener("click", () => {
+      const isOpen = this.effectSettingsPanel.hidden;
+      this.effectSettingsPanel.hidden = !isOpen;
+      this.effectSettingsToggle.setAttribute("aria-expanded", String(isOpen));
+    });
+    this.effectSettingsPanel.addEventListener("submit", (event) => {
+      event.preventDefault();
+      void this.saveEffectSettings();
+    });
+    this.previewReactionButton.addEventListener("click", () => this.effects.previewReaction());
+    this.previewDestructionButton.addEventListener("click", () => this.effects.previewDestruction());
 
     this.stage.addEventListener("click", (event) => {
       if ((event.target as HTMLElement).closest("button, input, label")) {
@@ -154,6 +203,8 @@ class PdfPresentationController {
       resizeObserver.disconnect();
       this.removeKeyboardListener();
       this.renderer.cancel();
+      this.effects.destroy();
+      this.reactionRealtime.disconnect();
       void this.loader.destroy();
     }, { once: true });
   }
@@ -186,6 +237,7 @@ class PdfPresentationController {
       this.uploadStatus.textContent = `${document.numPages}ページを読み込みました`;
       this.updateUi();
       await this.renderCurrentPage();
+      this.effects.setPage(1);
       this.notifySlideChange();
     } catch (error) {
       if (version !== this.loadVersion) {
@@ -217,6 +269,7 @@ class PdfPresentationController {
     }
     this.state.currentPage = nextPage;
     this.state.error = null;
+    this.effects.setPage(nextPage);
     this.updateUi();
     void this.renderCurrentPage();
     this.notifySlideChange();
@@ -271,6 +324,55 @@ class PdfPresentationController {
     }
   }
 
+  private async loadEffectSettings(): Promise<void> {
+    try {
+      this.effectSettings = await this.effectSettingsClient.load();
+      this.effectConnectionStatus.textContent = "演出設定をバックエンドと同期中";
+    } catch {
+      this.effectSettings = this.effectSettingsClient.defaults();
+      this.effectConnectionStatus.textContent = "演出設定はこの画面でのみ有効";
+    }
+    this.effects.updateSettings(this.effectSettings);
+    this.syncSettingsForm();
+  }
+
+  private readSettingsForm(): EffectSettings {
+    const threshold = Math.min(
+      100,
+      Math.max(2, Math.trunc(Number(this.destructionThreshold.value) || 5)),
+    );
+    return {
+      emojiEffectEnabled: this.emojiEffectEnabled.checked,
+      crackEffectEnabled: this.crackEffectEnabled.checked,
+      destructionEnabled: this.destructionEnabled.checked,
+      destructionThreshold: threshold,
+    };
+  }
+
+  private syncSettingsForm(): void {
+    this.emojiEffectEnabled.checked = this.effectSettings.emojiEffectEnabled;
+    this.crackEffectEnabled.checked = this.effectSettings.crackEffectEnabled;
+    this.destructionEnabled.checked = this.effectSettings.destructionEnabled;
+    this.destructionThreshold.value = String(this.effectSettings.destructionThreshold);
+  }
+
+  private async saveEffectSettings(): Promise<void> {
+    this.effectSettings = this.readSettingsForm();
+    this.effects.updateSettings(this.effectSettings);
+    this.syncSettingsForm();
+    this.effectSettingsMessage.textContent = "設定を保存しています...";
+    try {
+      this.effectSettings = await this.effectSettingsClient.save(this.effectSettings);
+      this.effects.updateSettings(this.effectSettings);
+      this.syncSettingsForm();
+      this.effectSettingsMessage.textContent = "演出設定を保存しました";
+      this.effectConnectionStatus.textContent = "演出設定をバックエンドと同期中";
+    } catch {
+      this.effectSettingsMessage.textContent = "ローカルで適用しました（設定API接続待ち）";
+      this.effectConnectionStatus.textContent = "演出設定はこの画面でのみ有効";
+    }
+  }
+
   private setError(message: string): void {
     this.state.error = message;
     this.errorMessage.textContent = message;
@@ -285,6 +387,8 @@ class PdfPresentationController {
     this.startButton.disabled = this.state.isLoading || this.document === null;
     this.fullscreenButton.disabled = this.state.isLoading || this.document === null;
     this.endButton.hidden = !this.state.isPresenting;
+    this.previewReactionButton.disabled = this.document === null || this.state.isLoading;
+    this.previewDestructionButton.disabled = this.document === null || this.state.isLoading;
     this.fileInput.disabled = this.state.isLoading;
     this.dropzone.classList.toggle("is-loading", this.state.isLoading);
     this.errorMessage.textContent = this.state.error ?? "";
@@ -301,7 +405,8 @@ async function bootstrapPresentation(): Promise<void> {
     }
 
     const roomId = document.body.dataset.roomId ?? "local";
-    new PdfPresentationController(`room-${roomId}`);
+    const presentationId = document.body.dataset.presentationId ?? roomId;
+    new PdfPresentationController(roomId, presentationId);
   } catch {
     window.location.href = "/tutor/login";
   }
