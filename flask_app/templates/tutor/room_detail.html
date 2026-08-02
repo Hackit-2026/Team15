@@ -1,0 +1,396 @@
+html_content = """<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>授業詳細 - 学習状況ダッシュボード</title>
+    <!-- グラフ描画ライブラリ Chart.js の読み込み -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg-color: #f8fafc;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --card-bg: #ffffff;
+            --border-color: #e2e8f0;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', 'Arial', 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+
+        header {
+            background: linear-gradient(135deg, #1e40af, #3b82f6);
+            color: white;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .back-link {
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+
+        .back-link:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            border: 1px solid var(--border-color);
+        }
+
+        .card h2 {
+            margin-top: 0;
+            margin-bottom: 2rem;
+            font-size: 1.5rem;
+            color: var(--text-main);
+            border-bottom: 2px solid var(--bg-color);
+            padding-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .dashboard-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+        }
+
+        @media (max-width: 850px) {
+            .dashboard-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* --- グラフのスクロール対応エリア --- */
+        .chart-scroll-wrapper {
+            width: 100%;
+            overflow-x: auto; /* 横スクロールを許可 */
+            overflow-y: hidden;
+            border: 1px solid var(--border-color); /* スクロールエリアがわかるように枠線を追加 */
+            border-radius: 8px;
+            padding-bottom: 0.5rem; /* スクロールバーのための余白 */
+        }
+
+        .chart-container {
+            position: relative;
+            height: 350px;
+            /* JavaScriptでデータ数に応じてmin-widthを動的に設定します */
+        }
+
+        /* スクロールバーのデザイン（Webkit系ブラウザ向け） */
+        .chart-scroll-wrapper::-webkit-scrollbar {
+            height: 8px;
+        }
+        .chart-scroll-wrapper::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+        .chart-scroll-wrapper::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .chart-scroll-wrapper::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* 統計・表エリア */
+        .table-scroll-wrapper {
+            max-height: 350px; /* グラフの高さと合わせる */
+            overflow-y: auto; /* 縦スクロールを許可 */
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+        }
+        
+        .table-scroll-wrapper::-webkit-scrollbar {
+            width: 8px;
+        }
+        .table-scroll-wrapper::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+        .table-scroll-wrapper::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .stats-table th, .stats-table td {
+            text-align: left;
+            padding: 1rem 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .stats-table th {
+            font-weight: 600;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            background-color: #f8fafc;
+            position: sticky; /* 表のヘッダーを固定 */
+            top: 0;
+            z-index: 1;
+        }
+
+        .stats-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .badge {
+            background-color: #fee2e2;
+            color: #b91c1c;
+            padding: 0.3rem 0.8rem;
+            border-radius: 999px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            display: inline-block;
+        }
+        
+        .badge-safe {
+            background-color: #f1f5f9;
+            color: #64748b;
+            padding: 0.3rem 0.8rem;
+            border-radius: 999px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body data-room-id="{{ room_id }}">
+
+    <header>
+        <h1>ネットワーク工学特論 - 授業詳細</h1>
+        <a href="#" class="back-link">← 科目一覧へ戻る</a>
+    </header>
+
+    <div class="container">
+        <div class="card">
+            <h2>📊 ページ別「わからん」集計</h2>
+            
+            <div class="dashboard-content">
+                <!-- 左側：グラフ描画エリア（横スクロール対応） -->
+                <div class="chart-scroll-wrapper">
+                    <div class="chart-container" id="chartContainer">
+                        <canvas id="wakaranChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- 右側：統計テーブル（縦スクロール対応） -->
+                <div class="table-scroll-wrapper">
+                    <table class="stats-table">
+                        <thead>
+                            <tr>
+                                <th>スライドページ</th>
+                                <th>わからん回数</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                            <!-- JavaScriptでデータを生成します -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <h2>📌 講義収集結果</h2>
+            <div id="reactionResults">API から講義収集結果を取得しています...</div>
+        </div>
+    </div>
+
+    <!-- グラフを描画するためのJavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const reactionResults = document.getElementById('reactionResults');
+            const roomIdFromBody = Number(document.body.dataset.roomId);
+            const roomIdFromPath = (() => {
+                const match = window.location.pathname.match(/\/tutor\/room\/(\d+)(?:\/|$)/);
+                return match ? Number(match[1]) : null;
+            })();
+            const roomId = Number.isInteger(roomIdFromBody) && roomIdFromBody > 0
+                ? roomIdFromBody
+                : Number.isInteger(roomIdFromPath) && roomIdFromPath > 0
+                    ? roomIdFromPath
+                    : null;
+
+            if (!roomId) {
+                reactionResults.textContent = 'room_id が設定されていません。';
+                return;
+            }
+
+            async function loadReactionResults() {
+                try {
+                    const response = await fetch(`/api/room/${encodeURIComponent(roomId)}/result`);
+                    let data;
+                    try {
+                        data = await response.json();
+                    } catch (jsonError) {
+                        const text = await response.text();
+                        throw new Error(`API 応答がJSONではありません: ${text}`);
+                    }
+                    if (!response.ok) {
+                        throw new Error(data.error || '収集結果の取得に失敗しました');
+                    }
+                    if (!data.page_counts || Object.keys(data.page_counts).length === 0) {
+                        reactionResults.textContent = '収集結果がありません。';
+                        return;
+                    }
+                    reactionResults.innerHTML = `
+                        <p>ルーム: ${data.room_name} (ID: ${data.room_id})</p>
+                        <p>反応数: ${data.reaction_count}</p>
+                        <h3>ページ別集計</h3>
+                        <ul>
+                            ${Object.entries(data.page_counts).map(([page, count]) => `
+                                <li>ページ ${page}: ${count} 回</li>
+                            `).join('')}
+                        </ul>
+                        <h3>詳細反応</h3>
+                        <ul>
+                            ${data.reactions.map(reaction => `
+                                <li>反応ID: ${reaction.id}, ユーザーID: ${reaction.user_id}, ページ: ${reaction.page}</li>
+                            `).join('')}
+                        </ul>
+                    `;
+                } catch (error) {
+                    reactionResults.textContent = `収集結果の取得に失敗しました: ${error.message}`;
+                }
+            }
+
+            loadReactionResults();
+
+            // スクロールのテスト用に、30ページ分のダミーデータを生成
+            const totalPages = 30;
+            const labels = [];
+            const data = [];
+            const tbody = document.getElementById('tableBody');
+
+            for (let i = 1; i <= totalPages; i++) {
+                labels.push(`P.${i}`);
+                
+                // 特定のページだけ回数を多くする
+                let count = 0;
+                if (i === 4) count = 28;
+                else if (i === 5) count = 15;
+                else if (i === 12) count = 10;
+                else if (i === 25) count = 22;
+                else {
+                    // 他は0〜3回のランダム
+                    count = Math.floor(Math.random() * 4);
+                }
+                data.push(count);
+
+                // 表の行を生成
+                const tr = document.createElement('tr');
+                const tdPage = document.createElement('td');
+                tdPage.textContent = `P. ${i}`;
+                
+                const tdCount = document.createElement('td');
+                const span = document.createElement('span');
+                span.textContent = `${count} 回`;
+                span.className = count >= 10 ? 'badge' : 'badge-safe';
+                tdCount.appendChild(span);
+                
+                tr.appendChild(tdPage);
+                tr.appendChild(tdCount);
+                tbody.appendChild(tr);
+            }
+
+            // グラフエリアの幅をデータ数に応じて動的に設定 (1データあたり約40pxの幅を確保)
+            const minWidth = labels.length * 40;
+            // グラフエリアのコンテナの最小幅を設定
+            document.getElementById('chartContainer').style.minWidth = Math.max(minWidth, 400) + 'px';
+
+            const ctx = document.getElementById('wakaranChart').getContext('2d');
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'わからん！の回数',
+                        data: data,
+                        backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                        borderColor: 'rgb(239, 68, 68)',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false, // コンテナの高さ・幅に合わせるために必須
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 5
+                            },
+                            title: {
+                                display: true,
+                                text: '回数'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.raw + ' 回';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
+"""
+
+with open('/mnt/data/course_stats_scroll.html', 'w', encoding='utf-8') as f:
+    f.write(html_content)
+
+print("File updated successfully.")

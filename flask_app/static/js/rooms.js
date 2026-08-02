@@ -51,8 +51,8 @@ function createRoomCard(room, maximumReactionCount, rank) {
 
     const link = document.createElement("a");
     link.className = "analytics-room-card__link";
-    link.href = `/tutor/room/${encodeURIComponent(room.id)}`;
-    link.textContent = "講義管理へ →";
+    link.href = `/tutor/room/${encodeURIComponent(room.id)}/detail`;
+    link.textContent = "詳細へ →";
 
     card.append(title, stat, link);
     return card;
