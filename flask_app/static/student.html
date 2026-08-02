@@ -518,6 +518,8 @@ let sid = null;            // 部屋ID（QRの ?sid=）
 let currentUser = null;    // ログイン中なら {id, username}、匿名なら null
 let myPresses = [];        // 自分が押した記録（ログイン中のみ使う）
 let totalPages = null;     // スライドの総ページ数。未登録の講義では null
+let lectureFinished = false;   // 先生が講義を終了したか
+let finishPollTimer = null;    // 終了を見張るタイマー
 
 // 連打について:
 // 以前は30秒のクールダウンを入れていたが、押したいときに押せないほうが
@@ -654,6 +656,10 @@ async function startMain() {
     // 部屋の情報を取る。返り値は {id, name, isFinished}
     const s = await apiGet("/api/room/" + sid);
     document.getElementById("lectureTitle").textContent = s.name;
+
+    // 終了済みならボタンを止める。開いている最中の終了に備えて見張りも始める。
+    if (s.isFinished) applyFinished();
+    else startFinishPolling();
   } catch (e) {
     showError(e.message);
   }
@@ -685,9 +691,52 @@ function renderLoginStatus() {
 
 
 // ============================================
+// 講義の終了
+// ============================================
+// 先生が講義を終了すると、押した記録は終了時のページに固定される
+// （サーバーがその時の current_page を刻むため）。終了後に押されると
+// グラフに実際には見ていないページの山ができるので、押せないようにする。
+// 終了判定は部屋（sid）ごとなので、別の講義（isFinished=false）を開けば
+// また普通に押せる。
+function applyFinished() {
+  if (lectureFinished) return;   // 二重には効かせない
+  lectureFinished = true;
+
+  if (finishPollTimer) {
+    clearInterval(finishPollTimer);
+    finishPollTimer = null;
+  }
+
+  const btn = document.getElementById("btn-wakaran");
+  btn.disabled = true;
+  btn.textContent = "終了";
+
+  document.getElementById("pressNote").textContent =
+    "この講義は終了しました。おつかれさまでした。";
+
+  // 記録（復習）タブはそのまま見られる
+}
+
+// 開いたまま先生が終了する場合に備えて、数秒おきに確認する。
+// 会場の人はページを開いたまま終了を迎えるので、これが本命の防ぎ方。
+function startFinishPolling() {
+  if (IS_MOCK) return;   // 仮データは終了しないので不要
+  finishPollTimer = setInterval(async () => {
+    try {
+      const s = await apiGet("/api/room/" + sid);
+      if (s.isFinished) applyFinished();
+    } catch (e) {
+      // 一時的な失敗は無視してよい（次の確認でまた試す）
+    }
+  }, 5000);
+}
+
+
+// ============================================
 // ボタンを押したとき
 // ============================================
 async function press() {
+  if (lectureFinished) return;   // 終了後は押させない
   const type = PRESS_TYPES.WAKARAN;
 
   // すぐ反応を返す（体感速度が大事）。連打できるので待たせない。
@@ -700,6 +749,10 @@ async function press() {
     // どのスライドを映していたかもサーバーが判定して page で返す。
     const res = await apiPostForm("/api/reaction/" + sid, { type: type });
     clearError();
+
+    // 押した瞬間に終了していたら、この1回は記録に残さず即ロックする。
+    // （ポーリングが次に確認するまでの隙間を埋める保険）
+    if (res.isFinished) { applyFinished(); return; }
 
     if (!currentUser) return;   // 匿名のときは手元に何も残さない
 
