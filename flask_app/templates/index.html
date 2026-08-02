@@ -28,7 +28,7 @@
 
   <script>
     async function loadStatus() {
-      const res = await fetch("/api/");
+      const res = await fetch("/api/me");
       const data = await res.json();
 
       if (data.user) {
