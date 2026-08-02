@@ -8,31 +8,25 @@ export class EffectSettingsClient {
   constructor(private readonly presentationId: string) {}
 
   async load(): Promise<EffectSettings> {
-    const response = await fetch(
-      `/api/presentation/${encodeURIComponent(this.presentationId)}/effect-settings`,
-    );
-    if (!response.ok) {
-      throw new Error("演出設定APIはまだ利用できません");
+    try {
+      const value = localStorage.getItem(this.storageKey());
+      return normalizeEffectSettings(value ? JSON.parse(value) : null);
+    } catch {
+      return this.defaults();
     }
-    return normalizeEffectSettings(await response.json());
   }
 
   async save(settings: EffectSettings): Promise<EffectSettings> {
-    const response = await fetch(
-      `/api/presentation/${encodeURIComponent(this.presentationId)}/effect-settings`,
-      {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(settings),
-      },
-    );
-    if (!response.ok) {
-      throw new Error("演出設定APIはまだ利用できません");
-    }
-    return normalizeEffectSettings(await response.json());
+    const normalizedSettings = normalizeEffectSettings(settings);
+    localStorage.setItem(this.storageKey(), JSON.stringify(normalizedSettings));
+    return normalizedSettings;
   }
 
   defaults(): EffectSettings {
     return { ...DEFAULT_EFFECT_SETTINGS };
+  }
+
+  private storageKey(): string {
+    return `team15-presentation-effects:${this.presentationId}`;
   }
 }

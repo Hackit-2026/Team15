@@ -6,7 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="PDFプレゼンテーション画面">
     <link rel="stylesheet" href="{{ url_for('static', filename='tutor/presentation.css') }}">
+    <script src="{{ url_for('static', filename='js/local-effect-settings-adapter.js', v='20260802-1') }}"></script>
     <script type="module" src="{{ url_for('static', filename='dist/presentation.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/presentation-reactions.js', v='20260802-5') }}" defer></script>
 </head>
 <body data-room-id="{{ room_id }}">
     <header class="presentation-header">
@@ -83,6 +85,12 @@
                     <p><strong id="currentPage">1</strong> / <span id="totalPages">0</span></p>
                     <button id="nextSlide" type="button">次へ →</button>
                     <button id="toggleFullscreen" type="button">全画面</button>
+                    <button
+                        class="presentation-project"
+                        id="openProjection"
+                        type="button"
+                        data-projection-url="{{ url_for('static', filename='tutor-projection.html') }}"
+                    >別画面でプレゼン</button>
                     <button class="presentation-start" id="startPresentation" type="button">プレゼン開始</button>
                     <button class="presentation-end" id="endPresentation" type="button" hidden>終了</button>
                 </div>

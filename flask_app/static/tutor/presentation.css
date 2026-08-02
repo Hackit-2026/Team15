@@ -374,14 +374,64 @@ button:disabled {
 
 .destruction-surface {
     position: absolute;
-    perspective: 900px;
+    z-index: 2;
+    perspective: 700px;
 }
 
 .slide-shard {
     position: absolute;
     background-repeat: no-repeat;
-    animation: shard-fall 1.5s cubic-bezier(0.3, 0.05, 0.72, 0.28) var(--shard-delay) forwards;
+    filter: brightness(1.08) drop-shadow(0 8px 8px rgba(0, 0, 0, 0.42));
+    animation: shard-explode 1.75s cubic-bezier(0.16, 0.72, 0.32, 1) var(--shard-delay) forwards;
     will-change: transform, opacity;
+}
+
+.explosion-flash,
+.explosion-shockwave,
+.explosion-debris {
+    position: absolute;
+    z-index: 4;
+    pointer-events: none;
+}
+
+.explosion-flash {
+    inset: 0;
+    background: radial-gradient(
+        circle at center,
+        rgba(255, 255, 255, 1) 0 8%,
+        rgba(255, 229, 126, 0.98) 14%,
+        rgba(255, 126, 35, 0.7) 30%,
+        transparent 58%
+    );
+    mix-blend-mode: screen;
+    animation: explosion-flash 0.62s ease-out forwards;
+}
+
+.explosion-shockwave {
+    top: 50%;
+    left: 50%;
+    width: min(16vw, 150px);
+    aspect-ratio: 1;
+    border: clamp(5px, 0.8vw, 12px) solid rgba(255, 224, 135, 0.95);
+    border-radius: 50%;
+    box-shadow:
+        0 0 24px rgba(255, 170, 48, 0.9),
+        inset 0 0 22px rgba(255, 255, 255, 0.8);
+    animation: explosion-shockwave 0.85s cubic-bezier(0.12, 0.62, 0.28, 1) forwards;
+}
+
+.explosion-debris {
+    width: var(--debris-size);
+    height: var(--debris-size);
+    border-radius: 40% 10% 55% 20%;
+    background: var(--debris-color);
+    box-shadow: 0 0 10px var(--debris-glow);
+    animation: debris-explode 1.05s ease-out var(--debris-delay) forwards;
+    will-change: transform, opacity;
+}
+
+.slide-viewport.is-exploding {
+    animation: explosion-shake 0.58s linear;
 }
 
 @keyframes emoji-rise {
@@ -398,15 +448,65 @@ button:disabled {
     }
 }
 
-@keyframes shard-fall {
+@keyframes shard-explode {
     0% {
         opacity: 1;
-        transform: translate3d(0, 0, 0) rotate(0);
+        transform: translate3d(0, 0, 0) rotateX(0) rotateY(0) rotateZ(0) scale(1);
+    }
+    9% {
+        opacity: 1;
+        transform: translate3d(0, 0, 35px) scale(1.035);
+    }
+    52% {
+        opacity: 1;
     }
     100% {
         opacity: 0;
-        transform: translate3d(var(--shard-x), var(--shard-y), 120px) rotate(var(--shard-rotation));
+        transform:
+            translate3d(var(--shard-x), var(--shard-y), var(--shard-z))
+            rotateX(var(--shard-rotation-x))
+            rotateY(var(--shard-rotation-y))
+            rotateZ(var(--shard-rotation))
+            scale(0.62);
     }
+}
+
+@keyframes explosion-flash {
+    0% { opacity: 0; transform: scale(0.12); }
+    12% { opacity: 1; }
+    45% { opacity: 0.92; transform: scale(1.15); }
+    100% { opacity: 0; transform: scale(1.8); }
+}
+
+@keyframes explosion-shockwave {
+    0% { opacity: 1; transform: translate(-50%, -50%) scale(0.1); }
+    65% { opacity: 0.7; }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(8); }
+}
+
+@keyframes debris-explode {
+    0% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(0.4);
+    }
+    18% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+        transform: translate(calc(-50% + var(--debris-x)), calc(-50% + var(--debris-y))) rotate(var(--debris-rotation)) scale(0.1);
+    }
+}
+
+@keyframes explosion-shake {
+    0%, 100% { transform: translate(0, 0) rotate(0); filter: brightness(1); }
+    8% { transform: translate(-10px, 5px) rotate(-0.5deg); filter: brightness(1.55); }
+    18% { transform: translate(11px, -7px) rotate(0.6deg); }
+    30% { transform: translate(-8px, -4px) rotate(-0.35deg); }
+    44% { transform: translate(7px, 6px) rotate(0.3deg); }
+    60% { transform: translate(-5px, 2px) rotate(-0.2deg); filter: brightness(1.1); }
+    78% { transform: translate(3px, -2px) rotate(0.1deg); }
+}
 }
 
 @keyframes reduced-destruction {
@@ -448,6 +548,16 @@ button:disabled {
 .presentation-controls .presentation-start {
     border-color: var(--primary);
     background: var(--primary);
+}
+
+.presentation-controls .presentation-project {
+    border-color: rgba(148, 177, 255, 0.72);
+    background: rgba(52, 87, 213, 0.2);
+    color: #dbe4ff;
+}
+
+.presentation-controls .presentation-project:hover:not(:disabled) {
+    background: rgba(52, 87, 213, 0.38);
 }
 
 .presentation-controls .presentation-start:hover:not(:disabled) {

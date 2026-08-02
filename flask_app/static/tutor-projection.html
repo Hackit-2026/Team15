@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="プレゼンテーション投影専用画面">
+    <title>プレゼンテーション投影</title>
+    <link rel="stylesheet" href="/static/tutor/projection.css?v=20260802-3">
+    <script src="/static/js/tutor-projection.js?v=20260802-2" defer></script>
+</head>
+<body>
+    <main class="projection-stage" id="projectionStage">
+        <img id="projectionSlide" alt="現在のスライド" hidden>
+        <div class="projection-cracks" id="projectionCracks" aria-hidden="true"></div>
+        <div class="projection-emojis" id="projectionEmojis" aria-hidden="true"></div>
+        <div class="projection-destruction" id="projectionDestruction" aria-hidden="true"></div>
+
+        <div class="projection-brand">AUDIENCE DISPLAY</div>
+        <div class="projection-window-controls" aria-label="ウィンドウ操作">
+            <button
+                class="projection-window-button"
+                id="projectionFullscreen"
+                type="button"
+                aria-label="全画面にする"
+                title="全画面にする (F)"
+            >⛶</button>
+            <button
+                class="projection-window-button projection-window-button--close"
+                id="projectionExit"
+                type="button"
+                aria-label="投影画面を閉じる"
+                title="閉じる"
+            >×</button>
+        </div>
+
+        <section class="projection-guide" id="projectionGuide">
+            <h1>投影画面</h1>
+            <p id="projectionStatus">講師画面からスライドを受信しています...</p>
+            <small>このウィンドウを投影先のモニターへ移動してください</small>
+        </section>
+
+        <div class="projection-stats" aria-label="プレゼンテーション情報">
+            <div class="projection-page" id="projectionPage">1 / 0</div>
+            <div class="projection-reaction-meter" id="projectionReactionMeter">🤔 0人</div>
+        </div>
+    </main>
+</body>
+</html>
