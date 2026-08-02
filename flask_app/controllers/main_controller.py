@@ -160,6 +160,15 @@ def get_room_reactions(room_id):
     "loggedInUserCount": logged_in_user_count,
   })
 
+@main.route("/room/<int:room_id>/result", methods=["GET"])
+def get_room_result(room_id):
+  room = Room.get_by_id(room_id)
+  if room is None:
+    return jsonify({"error": "部屋が見つかりません"}), 404
+
+  reactions = Reaction.get_all_by_room_id(room_id)
+  page_counts = Counter(reaction.page for reaction in reactions if reaction.page is not None)
+  return jsonify({str(page): count for page, count in sorted(page_counts.items())})
 
 @main.route("/qrcreate/<id>", methods=["GET"])
 def qr(id):
