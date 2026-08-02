@@ -7,3 +7,4 @@ CLAUDE.md
 .DS_Store
 node_modules/
 *.tsbuildinfo
+flask_app/storage/
