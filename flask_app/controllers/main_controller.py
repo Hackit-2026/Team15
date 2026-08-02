@@ -1,3 +1,4 @@
+from collections import Counter
 from functools import wraps
 
 from flask import Blueprint, jsonify, request, session
@@ -22,16 +23,15 @@ def room_to_dict(room):
   return {"id": room.id, "name": room.name, "isFinished": room.isFinished}
 
 
-@main.route("/")
+@main.route("/me")
 def index():
   user = None
   if "user_id" in session:
     user = db.session.get(User, session["user_id"])
-  return jsonify({"user": {"id": user.id, "username": user.username} if user else None})
+  return jsonify({"user": {"id": user.id, "username": user.username, "email": user.email, "isTutor": user.isTutor} if user else None})
 
 
-@main.route("/register", methods=["POST"])
-def register():
+def _register_user(is_tutor):
   email = request.form.get("email", "")
   password = request.form.get("password", "")
   username = request.form.get("username", "").strip()
@@ -45,10 +45,20 @@ def register():
   if User.query.filter_by(email=email).first() is not None:
     return jsonify({"error": "そのメールアドレスは既に使われています"}), 400
 
-  user = User(username=username, password=generate_password_hash(password), email=email)
+  user = User(username=username, password=generate_password_hash(password), email=email, isTutor=is_tutor)
   db.session.add(user)
   db.session.commit()
   return jsonify({"id": user.id, "username": user.username}), 201
+
+
+@main.route("/register", methods=["POST"])
+def register():
+  return _register_user(False)
+
+
+@main.route("/register/tutor", methods=["POST"])
+def register_tutor():
+  return _register_user(True)
 
 
 @main.route("/login", methods=["POST"])
@@ -70,13 +80,6 @@ def logout():
   return jsonify({"message": "ログアウトしました"})
 
 
-@main.route("/mypage")
-@login_required
-def mypage():
-  user = db.session.get(User, session["user_id"])
-  return jsonify({"id": user.id, "username": user.username, "email": user.email})
-
-
 @main.route("/room", methods=["POST"])
 @login_required
 def create_room():
@@ -95,6 +98,9 @@ def room(id):
     return jsonify({"error": "部屋が見つかりません"}), 404
 
   if request.method == "POST":
+    if session.get("user_id") != room.user_id:
+      return jsonify({"error": "権限がありません"}), 403
+
     is_finished = request.form.get("is_finished", "").strip()
     if is_finished:
       room = Room.close_room(id)
@@ -108,26 +114,44 @@ def send_reaction(id):
   if room is None:
     return jsonify({"error": "部屋が見つかりません"}), 404
 
-  Reaction.create_reaction(id)
+  user_id = session.get("user_id")
+  Reaction.create_reaction(id, user_id)
   return jsonify(room_to_dict(room)), 201
 
 
-@main.route("/room_setting/<id>")
-def room_setting(id):
-  room = Room.get_by_id(id)
-  if room is None:
-    return jsonify({"error": "部屋が見つかりません"}), 404
-  return jsonify(room_to_dict(room))
+# @main.route("/room_setting/<id>")
+# def room_setting(id):
+#   room = Room.get_by_id(id)
+#   if room is None:
+#     return jsonify({"error": "部屋が見つかりません"}), 404
+#   return jsonify(room_to_dict(room))
 
 
-@main.route("/room_close/<id>", methods=["POST"])
-def room_close(id):
-  room = Room.get_by_id(id)
-  if room is None:
-    return jsonify({"error": "部屋が見つかりません"}), 404
+# @main.route("/room_close/<id>", methods=["POST"])
+# @login_required
+# def room_close(id):
+#   room = Room.get_by_id(id)
+#   if room is None:
+#     return jsonify({"error": "部屋が見つかりません"}), 404
 
-  is_finished = request.form.get("is_finished", "").strip()
-  if is_finished:
-    room = Room.close_room(id)
+#   if session["user_id"] != room.user_id:
+#     return jsonify({"error": "権限がありません"}), 403
 
-  return jsonify(room_to_dict(room))
+#   is_finished = request.form.get("is_finished", "").strip()
+#   if is_finished:
+#     room = Room.close_room(id)
+
+#   return jsonify(room_to_dict(room))
+
+
+@main.route("/reactions/room/<room_id>")
+def reactions_by_room_id(room_id):
+  reactions = Reaction.get_all_by_room_id(room_id)
+  return jsonify({"reactionCount": len(reactions)})
+
+
+@main.route("/reactions/user/<user_id>")
+def reactions_by_user_id(user_id):
+  reactions = Reaction.get_all_by_user_id(user_id)
+  counts = Counter(r.room_id for r in reactions)
+  return jsonify([{"roomId": room_id, "reactionCount": count} for room_id, count in counts.items()])

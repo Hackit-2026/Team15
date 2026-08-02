@@ -14,6 +14,7 @@ class User(db.Model):
   email = db.Column(db.Text)
   password = db.Column(db.Text, nullable=False)
   username = db.Column(db.Text, unique=True, nullable=False)
+  isTutor = db.Column(db.Boolean, default=False)
 
 
 class Room(db.Model):
@@ -46,15 +47,15 @@ class Room(db.Model):
     db.session.commit()
     return room
 
-  def get_reactions(self):
-    return Reaction.query.filter_by(room_id=self.id).all()
-
 
 class Reaction(db.Model):
   __tablename__ = 'reactions'
   
   id = db.Column(db.Integer, primary_key=True)
   room_id = db.Column(db.Integer, db.ForeignKey("rooms.id"), nullable=False)
+  user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+  user = db.relationship("User", backref="reactions")
+
 
   @classmethod
   def get_by_id(cls, reaction_id):
@@ -65,8 +66,13 @@ class Reaction(db.Model):
     return cls.query.filter_by(room_id=room_id).all()
 
   @classmethod
-  def create_reaction(cls, room_id):
-    reaction = Reaction(room_id=room_id)
+  def get_all_by_user_id(cls, user_id):
+    return cls.query.filter_by(user_id=user_id).all()
+  
+  @classmethod
+  def create_reaction(cls, room_id, user_id):
+    reaction = Reaction(room_id=room_id, user_id=user_id)
     db.session.add(reaction)
     db.session.commit()
     return reaction
+
