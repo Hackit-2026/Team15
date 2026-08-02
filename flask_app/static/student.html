@@ -34,6 +34,10 @@
     background: #fdf6f3;
     -webkit-tap-highlight-color: transparent;
     min-height: 100vh;
+    /* 連打がダブルタップ扱いになって画面が拡大するのを止める。
+       ボタンを少し外して押しても拡大しないよう、画面全体にかけている。
+       指2本での拡大縮小は今までどおり使える。 */
+    touch-action: manipulation;
   }
 
   /* 背景のやわらかい色だまり。動かないので邪魔にならない程度に */
@@ -126,6 +130,10 @@
     height: 100%;
     border: none;
     border-radius: 50%;
+    touch-action: manipulation;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;   /* 長押しでメニューが出ないように */
     font-family: inherit;
     font-size: 30px;
     font-weight: 700;
