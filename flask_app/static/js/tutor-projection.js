@@ -3,10 +3,18 @@
     const roomId = params.get("roomId");
     const stage = document.getElementById("projectionStage");
     const slide = document.getElementById("projectionSlide");
+    const projectionCanvas = document.getElementById("projectionCanvas");
     const guide = document.getElementById("projectionGuide");
     const status = document.getElementById("projectionStatus");
     const fullscreenButton = document.getElementById("projectionFullscreen");
     const exitButton = document.getElementById("projectionExit");
+    const shareToggleButton = document.getElementById("projectionShareToggle");
+    const sharePanel = document.getElementById("projectionSharePanel");
+    const shareQr = document.getElementById("projectionShareQr");
+    const shareQrStatus = document.getElementById("projectionShareQrStatus");
+    const shareUrl = document.getElementById("projectionShareUrl");
+    const shareCopyButton = document.getElementById("projectionShareCopy");
+    const shareMessage = document.getElementById("projectionShareMessage");
     const pageIndicator = document.getElementById("projectionPage");
     const reactionMeter = document.getElementById("projectionReactionMeter");
     const emojis = document.getElementById("projectionEmojis");
@@ -29,6 +37,47 @@
     let crackEnabled = false;
     let destroyed = false;
     let touchStartX = null;
+    const participantUrl = `${window.location.origin}/room/${encodeURIComponent(roomId || "")}`;
+
+    function setSharePanel(open) {
+        stage.classList.toggle("has-share-panel", open);
+        sharePanel.setAttribute("aria-hidden", String(!open));
+        shareToggleButton.setAttribute("aria-expanded", String(open));
+        shareToggleButton.setAttribute(
+            "aria-label",
+            open ? "参加用QRコードを閉じる" : "参加用QRコードを表示",
+        );
+        shareToggleButton.title = open ? "QRコードとURLを閉じる (Q)" : "QRコードとURLを表示 (Q)";
+
+        if (open && !shareQr.getAttribute("src")) {
+            shareQrStatus.hidden = false;
+            shareQr.hidden = true;
+            shareQr.src = `/api/qrcreate/${encodeURIComponent(roomId)}`;
+        }
+    }
+
+    shareUrl.textContent = participantUrl;
+    shareQr.addEventListener("load", () => {
+        shareQr.hidden = false;
+        shareQrStatus.hidden = true;
+    });
+    shareQr.addEventListener("error", () => {
+        shareQr.hidden = true;
+        shareQrStatus.hidden = false;
+        shareQrStatus.textContent = "QRコードを表示できませんでした";
+    });
+    shareToggleButton.addEventListener("click", () => {
+        setSharePanel(!stage.classList.contains("has-share-panel"));
+    });
+    shareCopyButton.addEventListener("click", async () => {
+        try {
+            await navigator.clipboard.writeText(participantUrl);
+            shareMessage.textContent = "参加者用URLをコピーしました";
+        } catch {
+            shareMessage.textContent = "URLを選択してコピーしてください";
+            window.getSelection()?.selectAllChildren(shareUrl);
+        }
+    });
 
     function updateReactionState() {
         reactionMeter.textContent = destructionEnabled
@@ -74,15 +123,21 @@
         }
         destroyed = true;
         if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-            slide.animate([{ opacity: 1 }, { opacity: 0.2 }, { opacity: 1 }], { duration: 450 });
+            const visibleSlide = stage.classList.contains("has-hires-slide")
+                ? projectionCanvas
+                : slide;
+            visibleSlide.animate([{ opacity: 1 }, { opacity: 0.2 }, { opacity: 1 }], { duration: 450 });
             return;
         }
 
-        const slideBounds = slide.getBoundingClientRect();
+        const visibleSlide = stage.classList.contains("has-hires-slide")
+            ? projectionCanvas
+            : slide;
+        const slideBounds = visibleSlide.getBoundingClientRect();
         const stageBounds = stage.getBoundingClientRect();
         const surface = document.createElement("div");
-        const columns = 6;
-        const rows = 4;
+        const columns = 8;
+        const rows = 5;
         surface.className = "projection-surface";
         Object.assign(surface.style, {
             left: `${slideBounds.left - stageBounds.left}px`,
@@ -99,7 +154,7 @@
                 const directionX = (column + 0.5) / columns - 0.5;
                 const directionY = (row + 0.5) / rows - 0.5;
                 const length = Math.hypot(directionX, directionY) || 1;
-                const force = 280 + Math.random() * 260;
+                const force = 400 + Math.random() * 460;
                 shard.className = "projection-shard";
                 Object.assign(shard.style, {
                     left: `${column * width}px`,
@@ -112,20 +167,58 @@
                 });
                 shard.style.setProperty("--x", `${directionX / length * force}px`);
                 shard.style.setProperty("--y", `${directionY / length * force}px`);
-                shard.style.setProperty("--z", `${100 + Math.random() * 330}px`);
-                shard.style.setProperty("--rx", `${-160 + Math.random() * 320}deg`);
-                shard.style.setProperty("--ry", `${-160 + Math.random() * 320}deg`);
-                shard.style.setProperty("--rz", `${-230 + Math.random() * 460}deg`);
-                shard.style.setProperty("--delay", `${Math.random() * 45}ms`);
+                shard.style.setProperty("--z", `${180 + Math.random() * 560}px`);
+                shard.style.setProperty("--rx", `${-260 + Math.random() * 520}deg`);
+                shard.style.setProperty("--ry", `${-260 + Math.random() * 520}deg`);
+                shard.style.setProperty("--rz", `${-380 + Math.random() * 760}deg`);
+                shard.style.setProperty("--delay", `${Math.random() * 90}ms`);
                 surface.append(shard);
             }
         }
 
         const flash = document.createElement("span");
         flash.className = "projection-flash";
+        const core = document.createElement("span");
+        core.className = "projection-core";
         const shockwave = document.createElement("span");
         shockwave.className = "projection-shockwave";
-        destruction.append(surface, flash, shockwave);
+        const secondaryShockwave = document.createElement("span");
+        secondaryShockwave.className = "projection-shockwave projection-shockwave--secondary";
+        destruction.append(surface, flash, core, shockwave, secondaryShockwave);
+
+        const centerX = slideBounds.left - stageBounds.left + slideBounds.width / 2;
+        const centerY = slideBounds.top - stageBounds.top + slideBounds.height / 2;
+        const debrisColors = ["#ffffff", "#fff2a8", "#ffbd43", "#ff6b35", "#ef476f"];
+        for (let index = 0; index < 88; index += 1) {
+            const debris = document.createElement("span");
+            const angle = Math.random() * Math.PI * 2;
+            const force = 240 + Math.random() * 650;
+            const color = debrisColors[index % debrisColors.length];
+            debris.className = "projection-debris";
+            debris.style.left = `${centerX}px`;
+            debris.style.top = `${centerY}px`;
+            debris.style.setProperty("--debris-x", `${Math.cos(angle) * force}px`);
+            debris.style.setProperty("--debris-y", `${Math.sin(angle) * force}px`);
+            debris.style.setProperty("--debris-size", `${4 + Math.random() * 14}px`);
+            debris.style.setProperty("--debris-rotation", `${Math.random() * 1080}deg`);
+            debris.style.setProperty("--debris-delay", `${Math.random() * 160}ms`);
+            debris.style.setProperty("--debris-color", color);
+            destruction.append(debris);
+        }
+
+        for (let index = 0; index < 22; index += 1) {
+            const smoke = document.createElement("span");
+            const angle = Math.random() * Math.PI * 2;
+            const distance = 80 + Math.random() * 260;
+            smoke.className = "projection-smoke";
+            smoke.style.left = `${centerX}px`;
+            smoke.style.top = `${centerY}px`;
+            smoke.style.setProperty("--smoke-x", `${Math.cos(angle) * distance}px`);
+            smoke.style.setProperty("--smoke-y", `${Math.sin(angle) * distance - 100}px`);
+            smoke.style.setProperty("--smoke-size", `${90 + Math.random() * 190}px`);
+            smoke.style.setProperty("--smoke-delay", `${100 + Math.random() * 260}ms`);
+            destruction.append(smoke);
+        }
         slide.hidden = true;
         stage.classList.remove("is-exploding");
         void stage.offsetWidth;
@@ -134,7 +227,7 @@
             destruction.replaceChildren();
             stage.classList.remove("is-exploding");
             slide.hidden = false;
-        }, 2100);
+        }, 3200);
     }
 
     function navigate(direction) {
@@ -224,12 +317,19 @@
 
     exitButton.addEventListener("click", () => window.close());
     stage.addEventListener("click", (event) => {
-        if (event.target instanceof Element && event.target.closest("button")) {
+        if (
+            event.target instanceof Element
+            && event.target.closest("button, .projection-share-panel")
+        ) {
             return;
         }
         navigate(event.clientX < window.innerWidth / 2 ? "previous" : "next");
     });
     stage.addEventListener("touchstart", (event) => {
+        if (event.target instanceof Element && event.target.closest(".projection-share-panel")) {
+            touchStartX = null;
+            return;
+        }
         touchStartX = event.changedTouches[0]?.clientX ?? null;
     }, { passive: true });
     stage.addEventListener("touchend", (event) => {
@@ -249,6 +349,8 @@
             navigate("previous");
         } else if (event.key.toLowerCase() === "f") {
             void toggleProjectionFullscreen();
+        } else if (event.key.toLowerCase() === "q") {
+            setSharePanel(!stage.classList.contains("has-share-panel"));
         }
     });
 

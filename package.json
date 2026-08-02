@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "vite build",
+    "build:projection": "vite build --config vite.projection.config.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
