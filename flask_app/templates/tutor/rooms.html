@@ -1,4 +1,4 @@
-html_content = """<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
@@ -149,64 +149,14 @@ html_content = """<!DOCTYPE html>
 <body>
 
     <header>
-        <h1>○○さんの科目一覧</h1>
-        
+        <h1 id="roomsTitle">○○さんの科目一覧</h1>
     </header>
 
     <div class="container">
-        
+        <p id="roomsMessage">科目一覧を読み込んでいます...</p>
 
-        <div class="grid">
-            
-            <div class="card">
-                <h2>ネットワーク工学特論</h2>
-                <div class="card-footer">
-                    <a href="#" class="syllabus-link">授業詳細</a>
-                </div>
-            </div>
-
-            <div class="card">
-                <h2>サイバーセキュリティ概論</h2>
-                <div class="card-footer">
-                    <a href="#" class="syllabus-link">授業詳細</a>
-                </div>
-            </div>
-
-            <div class="card">
-                <h2>解析学 I</h2>
-                <div class="card-footer">
-                    <a href="#" class="syllabus-link">授業詳細</a>
-                </div>
-            </div>
-
-            <div class="card">
-                <h2>ソフトウェア・リテラシー</h2>
-                <div class="card-footer">
-                    <a href="#" class="syllabus-link">授業詳細</a>
-                </div>
-            </div>
-
-            <div class="card">
-                <h2>プロジェクトデザイン演習</h2>
-                <div class="card-footer">
-                    <a href="#" class="syllabus-link">授業詳細</a>
-                </div>
-            </div>
-
-            <div class="card">
-                <h2>環境デザイン論</h2>
-                <div class="card-footer">
-                    <a href="#" class="syllabus-link">授業詳細</a>
-                </div>
-            </div>
-
-        </div>
+        <div class="grid" id="roomsGrid"></div>
     </div>
+    <script src="{{ url_for('static', filename='js/rooms.js') }}" defer></script>
 </body>
 </html>
-"""
-
-with open('/mnt/data/course_list_simple.html', 'w', encoding='utf-8') as f:
-    f.write(html_content)
-
-print("File updated successfully.")

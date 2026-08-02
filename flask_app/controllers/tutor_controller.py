@@ -39,3 +39,11 @@ def tutor_room_presentation(room_id):
     title="プレゼンテーション",
     room_id=room_id,
   )
+
+
+@tutor_routes.route("/rooms")
+def tutor_rooms():
+  return render_template(
+    "tutor/rooms.html",
+    title="科目一覧",
+  )
