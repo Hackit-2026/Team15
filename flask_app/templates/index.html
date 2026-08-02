@@ -3,48 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
+  <title>Checkit</title>
 </head>
 <body>
-  <h1>Heeee</h1>
-
-  <div id="message"></div>
-
-  <div id="logged-in" style="display:none;">
-    <p><span id="username"></span> さんとしてログイン中です。</p>
-    <p>
-      <a href="/mypage">マイページ</a> |
-      <a href="/room/new">部屋を作成</a> |
-      <a href="#" id="logout-link">ログアウト</a>
-    </p>
-  </div>
-
-  <div id="logged-out" style="display:none;">
-    <p>
-      <a href="/login">ログイン</a> |
-      <a href="/register">新規登録</a>
-    </p>
-  </div>
-
-  <script>
-    async function loadStatus() {
-      const res = await fetch("/api/me");
-      const data = await res.json();
-
-      if (data.user) {
-        document.getElementById("username").textContent = data.user.username;
-        document.getElementById("logged-in").style.display = "block";
-      } else {
-        document.getElementById("logged-out").style.display = "block";
-      }
-    }
-    loadStatus();
-
-    document.getElementById("logout-link").addEventListener("click", async (e) => {
-      e.preventDefault();
-      await fetch("/api/logout", { method: "POST" });
-      window.location.href = "/";
-    });
-  </script>
+  <h1>Checkit</h1>
 </body>
 </html>
