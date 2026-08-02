@@ -8,144 +8,299 @@
 <script src="common.js"></script>
 
 <style>
+  /* ============================================
+     学生側のデザイン方針（教員側とは別系統・意図的）
+     やわらかい背景 / 丸みの強い形 / 余白多め。
+     授業中に緊張せず押せることを優先している。
+     ============================================ */
+
+  :root {
+    --ink:       #4a4550;   /* 本文。真っ黒は硬いので少し紫寄りに */
+    --ink-soft:  #8b8494;   /* 補足文 */
+    --coral:     #f2706b;   /* 分からん。共通定義 #e05555 と同系統 */
+    --coral-deep:#e05555;
+    --card:      #ffffff;
+    --radius:    28px;
+  }
+
+  * { box-sizing: border-box; }
+
   body {
-    font-family: sans-serif;
+    font-family: "Hiragino Maru Gothic ProN", "ヒラギノ丸ゴ ProN",
+                 "Yu Gothic", "游ゴシック体", sans-serif;
     margin: 0;
-    padding: 16px;
-    background: #f5f5f5;
+    padding: 20px 18px 40px;
+    color: var(--ink);
+    background: #fdf6f3;
     -webkit-tap-highlight-color: transparent;
+    min-height: 100vh;
   }
+
+  /* 背景のやわらかい色だまり。動かないので邪魔にならない程度に */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background:
+      radial-gradient(circle at 12% 0%,   #ffe3dc 0%, transparent 45%),
+      radial-gradient(circle at 92% 12%,  #e2ecff 0%, transparent 42%),
+      radial-gradient(circle at 50% 100%, #fdf1e6 0%, transparent 55%);
+  }
+
   .card {
-    background: #fff;
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 16px;
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 28px 24px;
+    margin-bottom: 18px;
+    box-shadow: 0 6px 24px rgba(120, 96, 110, 0.08);
   }
-  h2 { font-size: 18px; margin: 0 0 12px; }
+
+  h2 {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0 0 14px;
+    letter-spacing: 0.02em;
+  }
 
   /* --- 画面の出し分け --- */
   .screen { display: none; }
   .screen.active { display: block; }
 
-  .note { font-size: 14px; color: #666; line-height: 1.7; }
+  .note {
+    font-size: 14px;
+    color: var(--ink-soft);
+    line-height: 1.9;
+  }
 
-  /* --- ボタン3つ --- */
+  /* --- 汎用ボタン（入口・フォーム用） --- */
   .btn {
     display: block;
     width: 100%;
-    height: 88px;
-    font-size: 26px;
-    font-weight: bold;
+    padding: 18px;
+    font-size: 17px;
+    font-weight: 700;
+    font-family: inherit;
     color: #fff;
     border: none;
-    border-radius: 12px;
-    margin-bottom: 14px;
+    border-radius: 999px;
+    margin-bottom: 12px;
     cursor: pointer;
-    transition: transform 0.08s;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
   }
   .btn:active { transform: scale(0.97); }
-  .btn:disabled { background: #bbb !important; }
 
-  .btn-wakaran { background: #e05555; }
+  .btn-login {
+    background: linear-gradient(135deg, #7d7391, #625a75);
+    box-shadow: 0 6px 16px rgba(98, 90, 117, 0.28);
+  }
+  .btn-register {
+    background: linear-gradient(135deg, #8fb4f5, #6f92e8);
+    box-shadow: 0 6px 16px rgba(111, 146, 232, 0.28);
+  }
+  .btn-anon {
+    background: none;
+    color: var(--ink-soft);
+    box-shadow: none;
+    border: 2px solid #ece4ea;
+  }
 
-  /* --- 入口・ログインまわりのボタン --- */
-  .btn-login    { background: #333; }
-  .btn-register { background: #5580e0; }
-  .btn-anon     { background: #999; }
+  /* --- 「分からん」の大きな円ボタン --- */
+  .press-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 14px 0 4px;
+  }
+  .press-wrap {
+    position: relative;
+    width: 232px;
+    height: 232px;
+    display: grid;
+    place-items: center;
+  }
+  .press-btn {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: 50%;
+    font-family: inherit;
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: #fff;
+    cursor: pointer;
+    background: linear-gradient(145deg, #ff9086, var(--coral-deep));
+    box-shadow:
+      0 14px 30px rgba(224, 85, 85, 0.34),
+      inset 0 -6px 14px rgba(0, 0, 0, 0.10),
+      inset 0 6px 14px rgba(255, 255, 255, 0.28);
+    transition: transform 0.14s cubic-bezier(.34,1.56,.64,1), box-shadow 0.14s ease;
+  }
+  .press-btn:active {
+    transform: scale(0.93);
+    box-shadow: 0 6px 14px rgba(224, 85, 85, 0.30);
+  }
+  .press-btn:disabled {
+    background: linear-gradient(145deg, #e6dfe4, #cfc6cf);
+    color: #fff;
+    font-size: 24px;
+    box-shadow: 0 6px 16px rgba(150, 140, 150, 0.18);
+    cursor: default;
+  }
+
+  /* 押した瞬間に広がる波紋 */
+  .ripple {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 3px solid var(--coral);
+    opacity: 0;
+    pointer-events: none;
+  }
+  .press-wrap.is-pressed .ripple {
+    animation: ripple 0.65s ease-out;
+  }
+  @keyframes ripple {
+    0%   { transform: scale(1);    opacity: 0.55; }
+    100% { transform: scale(1.45); opacity: 0; }
+  }
 
   /* --- ログイン・登録フォーム --- */
   .field {
     display: block;
     width: 100%;
-    box-sizing: border-box;
-    font-size: 18px;
+    font-size: 16px;
     font-family: inherit;
-    padding: 12px;
+    color: var(--ink);
+    padding: 16px 18px;
     margin-bottom: 12px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
+    background: #faf7f9;
+    border: 2px solid #f0e9ee;
+    border-radius: 18px;
+    transition: border-color 0.15s, background 0.15s;
   }
-  .err { color: #c00; font-size: 14px; min-height: 1.2em; margin: 0 0 10px; }
+  .field:focus {
+    outline: none;
+    background: #fff;
+    border-color: #c8b8d8;
+  }
+  .field::placeholder { color: #c3bcc8; }
+
+  .err {
+    color: #d4574f;
+    font-size: 14px;
+    min-height: 1.3em;
+    margin: 0 0 10px;
+  }
 
   /* --- 押した直後のトースト --- */
   #toast {
     position: fixed;
     left: 50%;
-    bottom: 30px;
-    transform: translateX(-50%);
-    background: rgba(0,0,0,0.8);
+    bottom: 36px;
+    transform: translateX(-50%) translateY(8px);
+    background: rgba(74, 69, 80, 0.92);
     color: #fff;
-    padding: 12px 24px;
-    border-radius: 30px;
-    font-size: 16px;
+    padding: 14px 28px;
+    border-radius: 999px;
+    font-size: 15px;
+    font-weight: 700;
     opacity: 0;
-    transition: opacity 0.2s;
+    transition: opacity 0.25s, transform 0.25s;
     pointer-events: none;
+    box-shadow: 0 8px 20px rgba(74, 69, 80, 0.25);
   }
-  #toast.show { opacity: 1; }
+  #toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
 
   /* --- 自分の記録 --- */
   .log-item {
-    padding: 12px 0;
-    border-bottom: 1px solid #eee;
-    font-size: 17px;
+    padding: 18px 0;
+    border-bottom: 1px solid #f4eef2;
+    font-size: 16px;
   }
+  .log-item:last-child { border-bottom: none; padding-bottom: 4px; }
+
   .log-head {
     display: flex;
     align-items: center;
   }
-  .log-time { width: 70px; color: #666; }
+  .log-time {
+    width: 72px;
+    font-weight: 700;
+    font-size: 17px;
+  }
   .log-dot {
     width: 12px; height: 12px;
     border-radius: 50%;
-    margin-right: 10px;
+    margin-right: 12px;
     flex: none;
   }
 
   /* --- 進捗バー（講義100分のどのあたりか） --- */
   .bar {
     position: relative;
-    height: 6px;
-    background: #eee;
-    border-radius: 3px;
-    margin: 10px 0 0 22px;
+    height: 8px;
+    background: #f4eef2;
+    border-radius: 999px;
+    margin: 14px 0 0 24px;
   }
   .bar-mark {
     position: absolute;
     top: -3px;
-    width: 12px; height: 12px;
+    width: 14px; height: 14px;
     border-radius: 50%;
     transform: translateX(-50%);
-    border: 2px solid #fff;
-    box-sizing: border-box;
+    border: 3px solid #fff;
+    box-shadow: 0 2px 6px rgba(224, 85, 85, 0.35);
   }
   .bar-ends {
     display: flex;
     justify-content: space-between;
     font-size: 11px;
-    color: #aaa;
-    margin: 4px 0 0 22px;
+    color: #c3bcc8;
+    margin: 6px 0 0 24px;
   }
 
   /* --- メモ --- */
   .memo {
-    width: calc(100% - 22px);
-    margin: 10px 0 0 22px;
-    box-sizing: border-box;
+    width: calc(100% - 24px);
+    margin: 14px 0 0 24px;
     font-size: 15px;
     font-family: inherit;
-    padding: 8px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
+    color: var(--ink);
+    padding: 12px 14px;
+    background: #faf7f9;
+    border: 2px solid #f0e9ee;
+    border-radius: 16px;
     resize: vertical;
-    min-height: 38px;
+    min-height: 46px;
   }
-  .memo::placeholder { color: #bbb; }
+  .memo:focus {
+    outline: none;
+    background: #fff;
+    border-color: #c8b8d8;
+  }
+  .memo::placeholder { color: #c9c2ce; }
 
   /* --- 講義名（タブの上に常に出す） --- */
   .lecture-title {
-    font-size: 18px;
-    margin: 4px 4px 12px;
+    font-size: 21px;
+    font-weight: 700;
+    margin: 6px 6px 4px;
+    letter-spacing: 0.02em;
+  }
+  .lecture-cap {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    color: #c3bcc8;
+    margin: 0 6px 14px;
   }
 
   /* --- タブ（押す / 記録） --- */
@@ -154,60 +309,79 @@
      学生が自分で切り替えるタブにしている。 */
   .tabs {
     display: flex;
-    background: #fff;
-    border-radius: 12px;
-    padding: 4px;
-    margin-bottom: 16px;
+    background: rgba(255, 255, 255, 0.75);
+    border-radius: 999px;
+    padding: 5px;
+    margin-bottom: 18px;
+    box-shadow: 0 4px 16px rgba(120, 96, 110, 0.07);
   }
   .tab {
     flex: 1;
-    padding: 12px;
-    font-size: 16px;
-    font-weight: bold;
+    padding: 13px;
+    font-size: 15px;
+    font-weight: 700;
     font-family: inherit;
-    color: #888;
+    color: var(--ink-soft);
     background: none;
     border: none;
-    border-radius: 9px;
+    border-radius: 999px;
     cursor: pointer;
+    transition: background 0.18s, color 0.18s;
   }
   .tab.active {
-    background: #333;
+    background: linear-gradient(135deg, #7d7391, #625a75);
     color: #fff;
+    box-shadow: 0 4px 12px rgba(98, 90, 117, 0.24);
   }
   .badge {
     display: inline-block;
-    min-width: 18px;
-    padding: 0 5px;
-    margin-left: 6px;
+    min-width: 20px;
+    padding: 0 6px;
+    margin-left: 7px;
     font-size: 12px;
-    line-height: 18px;
-    border-radius: 9px;
-    background: #e05555;
+    line-height: 20px;
+    border-radius: 999px;
+    background: var(--coral);
     color: #fff;
   }
-  .tab.active .badge { background: #fff; color: #333; }
+  .tab.active .badge { background: rgba(255,255,255,0.9); color: #625a75; }
 
   /* --- 仮データで動いているときの表示 --- */
   #mockBanner {
-    background: #444;
+    background: rgba(74, 69, 80, 0.9);
     color: #fff;
-    font-size: 13px;
+    font-size: 12px;
+    font-weight: 700;
     text-align: center;
-    padding: 8px;
-    border-radius: 8px;
-    margin-bottom: 12px;
+    padding: 10px;
+    border-radius: 999px;
+    margin-bottom: 14px;
   }
 
   .sub {
     text-align: center;
     font-size: 13px;
-    color: #888;
-    margin-top: 20px;
+    color: var(--ink-soft);
+    margin-top: 22px;
+    line-height: 2;
   }
-  .sub a { color: #888; }
+  .sub a {
+    color: var(--ink-soft);
+    text-underline-offset: 4px;
+    margin: 0 6px;
+  }
 
-  #error { color: #c00; font-size: 14px; }
+  #error {
+    color: #d4574f;
+    font-size: 14px;
+    text-align: center;
+  }
+
+  /* 画面が広いときは中央に寄せる（発表でPCに映す場合の保険） */
+  @media (min-width: 560px) {
+    body { padding: 32px 0 60px; }
+    .screen { max-width: 480px; margin: 0 auto; }
+  }
 </style>
 </head>
 <body>
@@ -277,6 +451,7 @@
     仮データで動いています（サーバーには保存されません）
   </div>
 
+  <p class="lecture-cap">LECTURE</p>
   <h2 class="lecture-title" id="lectureTitle">講義</h2>
 
   <div class="tabs">
@@ -287,7 +462,12 @@
   <!-- 「押す」タブ：授業中はこれだけ見えていればいい -->
   <div id="tabPress">
     <div class="card">
-      <button class="btn btn-wakaran" id="btn-wakaran" onclick="press()">分からん</button>
+      <div class="press-area">
+        <div class="press-wrap" id="pressWrap">
+          <span class="ripple"></span>
+          <button class="press-btn" id="btn-wakaran" onclick="press()">分からん</button>
+        </div>
+      </div>
 
       <p class="note" style="text-align:center" id="pressNote"></p>
       <div id="error"></div>
@@ -489,6 +669,7 @@ async function press() {
   // すぐ反応を返す（体感速度が大事）
   toast("記録しました");
   if (navigator.vibrate) navigator.vibrate(50);
+  playRipple();
   startCooldown(btn, type);
 
   try {
@@ -513,6 +694,17 @@ async function press() {
   } catch (e) {
     showError(e.message);
   }
+}
+
+
+// 押した瞬間に円ボタンから波紋を広げる。
+// クラスを付け直すためにいったん外して、再描画を挟んでから付ける。
+function playRipple() {
+  const wrap = document.getElementById("pressWrap");
+  if (!wrap) return;
+  wrap.classList.remove("is-pressed");
+  void wrap.offsetWidth;
+  wrap.classList.add("is-pressed");
 }
 
 
