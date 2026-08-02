@@ -138,8 +138,8 @@ def send_reaction(id):
     return jsonify({"error": "部屋が見つかりません"}), 404
 
   user_id = session.get("user_id")
-  Reaction.create_reaction(id, user_id)
-  return jsonify(room_to_dict(room)), 201
+  reaction = Reaction.create_reaction(id, user_id)
+  return jsonify({"id": room.id, "name": room.name, "isFinished": room.isFinished, "page": reaction.page}), 201
 
 
 @main.route("/reactions/room/<int:room_id>", methods=["GET"])
