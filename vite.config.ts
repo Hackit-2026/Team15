@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 const projectRoot = fileURLToPath(new URL(".", import.meta.url));
 
 export default defineConfig({
+  base: "/static/dist/",
   build: {
     emptyOutDir: true,
     outDir: resolve(projectRoot, "flask_app/static/dist"),

@@ -183,13 +183,15 @@ async function loadDashboard(userId) {
 
         const roomsWithReactions = await Promise.all(
             rooms.map(async (room) => {
+                // 件数API（/api/reactions/room/<id>）は現在バックエンドに存在しない。
+                // 無い間は0件として表示を成立させ、復活したらそのまま件数が出る。
                 try {
                     const reactionResponse = await fetch(`/api/reactions/room/${room.id}`);
+                    if (!reactionResponse.ok) {
+                        return { ...room, reaction_count: 0 };
+                    }
                     const reactionData = await reactionResponse.json();
-                    return {
-                        ...room,
-                        reaction_count: reactionResponse.ok ? reactionData.reactionCount ?? 0 : 0,
-                    };
+                    return { ...room, reaction_count: reactionData.reactionCount ?? 0 };
                 } catch {
                     return { ...room, reaction_count: 0 };
                 }

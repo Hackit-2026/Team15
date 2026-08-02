@@ -138,39 +138,37 @@ def send_reaction(id):
     return jsonify({"error": "部屋が見つかりません"}), 404
 
   user_id = session.get("user_id")
-  Reaction.create_reaction(id, user_id)
-  return jsonify(room_to_dict(room)), 201
+  reaction = Reaction.create_reaction(id, user_id)
+  return jsonify({"id": room.id, "name": room.name, "isFinished": room.isFinished, "page": reaction.page}), 201
 
 
-def _reactions_for_user(user_id):
-  reactions = Reaction.get_all_by_user_id(user_id)
-  result = []
-  for reaction in reactions:
-    room = Room.get_by_id(reaction.room_id)
-    result.append({
-      "id": reaction.id,
-      "room_id": reaction.room_id,
-      "room_name": room.name if room else None,
-      "user_id": reaction.user_id,
-    })
-  return jsonify(result)
+@main.route("/reactions/room/<int:room_id>", methods=["GET"])
+def get_room_reactions(room_id):
+  room = Room.get_by_id(room_id)
+  if room is None:
+    return jsonify({"error": "部屋が見つかりません"}), 404
 
+  reactions = Reaction.get_all_by_room_id(room_id)
+  logged_in_user_count = len({
+    reaction.user_id
+    for reaction in reactions
+    if reaction.user_id is not None
+  })
+  return jsonify({
+    "roomId": room.id,
+    "reactionCount": len(reactions),
+    "loggedInUserCount": logged_in_user_count,
+  })
 
-@main.route("/reactions/user/<user_id>", methods=["GET"])
-@login_required
-def list_user_reactions(user_id):
-  return _reactions_for_user(user_id)
+@main.route("/room/<int:room_id>/result", methods=["GET"])
+def get_room_result(room_id):
+  room = Room.get_by_id(room_id)
+  if room is None:
+    return jsonify({"error": "部屋が見つかりません"}), 404
 
-
-@main.route("/reactions/user", methods=["POST"])
-@login_required
-def list_user_reactions_by_body():
-  data = request.get_json(silent=True) or {}
-  user_id = str(data.get("user_id", "")).strip()
-  if not user_id:
-    return jsonify({"error": "user_idを指定してください"}), 400
-  return _reactions_for_user(user_id)
-
+  reactions = Reaction.get_all_by_room_id(room_id)
+  page_counts = Counter(reaction.page for reaction in reactions if reaction.page is not None)
+  return jsonify({str(page): count for page, count in sorted(page_counts.items())})
 
 @main.route("/qrcreate/<id>", methods=["GET"])
 def qr(id):

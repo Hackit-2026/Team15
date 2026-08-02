@@ -8,138 +8,310 @@
 <script src="common.js"></script>
 
 <style>
+  /* ============================================
+     学生側のデザイン方針（教員側とは別系統・意図的）
+     やわらかい背景 / 丸みの強い形 / 余白多め。
+     授業中に緊張せず押せることを優先している。
+     ============================================ */
+
+  :root {
+    --ink:       #4a4550;   /* 本文。真っ黒は硬いので少し紫寄りに */
+    --ink-soft:  #8b8494;   /* 補足文 */
+    --coral:     #f2706b;   /* 分からん。共通定義 #e05555 と同系統 */
+    --coral-deep:#e05555;
+    --card:      #ffffff;
+    --radius:    28px;
+  }
+
+  * { box-sizing: border-box; }
+
   body {
-    font-family: sans-serif;
+    font-family: "Hiragino Maru Gothic ProN", "ヒラギノ丸ゴ ProN",
+                 "Yu Gothic", "游ゴシック体", sans-serif;
     margin: 0;
-    padding: 16px;
-    background: #f5f5f5;
+    padding: 20px 18px 40px;
+    color: var(--ink);
+    background: #fdf6f3;
     -webkit-tap-highlight-color: transparent;
+    min-height: 100vh;
   }
+
+  /* 背景のやわらかい色だまり。動かないので邪魔にならない程度に */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background:
+      radial-gradient(circle at 12% 0%,   #ffe3dc 0%, transparent 45%),
+      radial-gradient(circle at 92% 12%,  #e2ecff 0%, transparent 42%),
+      radial-gradient(circle at 50% 100%, #fdf1e6 0%, transparent 55%);
+  }
+
   .card {
-    background: #fff;
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 16px;
+    background: var(--card);
+    border-radius: var(--radius);
+    padding: 28px 24px;
+    margin-bottom: 18px;
+    box-shadow: 0 6px 24px rgba(120, 96, 110, 0.08);
   }
-  h2 { font-size: 18px; margin: 0 0 12px; }
+
+  h2 {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0 0 14px;
+    letter-spacing: 0.02em;
+  }
 
   /* --- 画面の出し分け --- */
   .screen { display: none; }
   .screen.active { display: block; }
 
-  /* --- 匿名アカウントのコード --- */
-  .code {
-    font-size: 44px;
-    font-weight: bold;
-    letter-spacing: 6px;
-    text-align: center;
-    padding: 20px;
-    background: #f0f0f0;
-    border-radius: 10px;
-    margin: 16px 0;
+  .note {
+    font-size: 14px;
+    color: var(--ink-soft);
+    line-height: 1.9;
   }
-  .note { font-size: 14px; color: #666; line-height: 1.7; }
 
-  /* --- ボタン3つ --- */
+  /* --- 汎用ボタン（入口・フォーム用） --- */
   .btn {
     display: block;
     width: 100%;
-    height: 88px;
-    font-size: 26px;
-    font-weight: bold;
+    padding: 18px;
+    font-size: 17px;
+    font-weight: 700;
+    font-family: inherit;
     color: #fff;
     border: none;
-    border-radius: 12px;
-    margin-bottom: 14px;
+    border-radius: 999px;
+    margin-bottom: 12px;
     cursor: pointer;
-    transition: transform 0.08s;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
   }
   .btn:active { transform: scale(0.97); }
-  .btn:disabled { background: #bbb !important; }
 
-  .btn-wakaran { background: #e05555; }
-  .btn-again   { background: #e0a355; }
-  .btn-fast    { background: #5580e0; }
+  .btn-login {
+    background: linear-gradient(135deg, #7d7391, #625a75);
+    box-shadow: 0 6px 16px rgba(98, 90, 117, 0.28);
+  }
+  .btn-register {
+    background: linear-gradient(135deg, #8fb4f5, #6f92e8);
+    box-shadow: 0 6px 16px rgba(111, 146, 232, 0.28);
+  }
+  .btn-anon {
+    background: none;
+    color: var(--ink-soft);
+    box-shadow: none;
+    border: 2px solid #ece4ea;
+  }
+
+  /* --- 「分からん」の大きな円ボタン --- */
+  .press-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 14px 0 4px;
+  }
+  .press-wrap {
+    position: relative;
+    width: 232px;
+    height: 232px;
+    display: grid;
+    place-items: center;
+  }
+  .press-btn {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: 50%;
+    font-family: inherit;
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: #fff;
+    cursor: pointer;
+    background: linear-gradient(145deg, #ff9086, var(--coral-deep));
+    box-shadow:
+      0 14px 30px rgba(224, 85, 85, 0.34),
+      inset 0 -6px 14px rgba(0, 0, 0, 0.10),
+      inset 0 6px 14px rgba(255, 255, 255, 0.28);
+    transition: transform 0.14s cubic-bezier(.34,1.56,.64,1), box-shadow 0.14s ease;
+  }
+  .press-btn:active {
+    transform: scale(0.93);
+    box-shadow: 0 6px 14px rgba(224, 85, 85, 0.30);
+  }
+  .press-btn:disabled {
+    background: linear-gradient(145deg, #e6dfe4, #cfc6cf);
+    color: #fff;
+    font-size: 24px;
+    box-shadow: 0 6px 16px rgba(150, 140, 150, 0.18);
+    cursor: default;
+  }
+
+  /* 押した瞬間に広がる波紋 */
+  .ripple {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 3px solid var(--coral);
+    opacity: 0;
+    pointer-events: none;
+  }
+  .press-wrap.is-pressed .ripple {
+    animation: ripple 0.65s ease-out;
+  }
+  @keyframes ripple {
+    0%   { transform: scale(1);    opacity: 0.55; }
+    100% { transform: scale(1.45); opacity: 0; }
+  }
+
+  /* --- ログイン・登録フォーム --- */
+  .field {
+    display: block;
+    width: 100%;
+    font-size: 16px;
+    font-family: inherit;
+    color: var(--ink);
+    padding: 16px 18px;
+    margin-bottom: 12px;
+    background: #faf7f9;
+    border: 2px solid #f0e9ee;
+    border-radius: 18px;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .field:focus {
+    outline: none;
+    background: #fff;
+    border-color: #c8b8d8;
+  }
+  .field::placeholder { color: #c3bcc8; }
+
+  .err {
+    color: #d4574f;
+    font-size: 14px;
+    min-height: 1.3em;
+    margin: 0 0 10px;
+  }
 
   /* --- 押した直後のトースト --- */
   #toast {
     position: fixed;
     left: 50%;
-    bottom: 30px;
-    transform: translateX(-50%);
-    background: rgba(0,0,0,0.8);
+    bottom: 36px;
+    transform: translateX(-50%) translateY(8px);
+    background: rgba(74, 69, 80, 0.92);
     color: #fff;
-    padding: 12px 24px;
-    border-radius: 30px;
-    font-size: 16px;
+    padding: 14px 28px;
+    border-radius: 999px;
+    font-size: 15px;
+    font-weight: 700;
     opacity: 0;
-    transition: opacity 0.2s;
+    transition: opacity 0.25s, transform 0.25s;
     pointer-events: none;
+    box-shadow: 0 8px 20px rgba(74, 69, 80, 0.25);
   }
-  #toast.show { opacity: 1; }
+  #toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
 
   /* --- 自分の記録 --- */
   .log-item {
-    padding: 12px 0;
-    border-bottom: 1px solid #eee;
-    font-size: 17px;
+    padding: 18px 0;
+    border-bottom: 1px solid #f4eef2;
+    font-size: 16px;
   }
+  .log-item:last-child { border-bottom: none; padding-bottom: 4px; }
+
   .log-head {
     display: flex;
     align-items: center;
   }
-  .log-time { width: 70px; color: #666; }
+  .log-time {
+    min-width: 72px;
+    margin-right: 14px;
+    font-weight: 700;
+    font-size: 17px;
+  }
   .log-dot {
     width: 12px; height: 12px;
     border-radius: 50%;
-    margin-right: 10px;
+    margin-right: 12px;
     flex: none;
+  }
+  /* 同じページを何度も押したときの回数 */
+  .count {
+    margin-left: auto;
+    padding: 3px 12px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--coral-deep);
+    background: #fdeceb;
+    border-radius: 999px;
   }
 
   /* --- 進捗バー（講義100分のどのあたりか） --- */
   .bar {
     position: relative;
-    height: 6px;
-    background: #eee;
-    border-radius: 3px;
-    margin: 10px 0 0 22px;
+    height: 8px;
+    background: #f4eef2;
+    border-radius: 999px;
+    margin: 14px 0 0 24px;
   }
   .bar-mark {
     position: absolute;
     top: -3px;
-    width: 12px; height: 12px;
+    width: 14px; height: 14px;
     border-radius: 50%;
     transform: translateX(-50%);
-    border: 2px solid #fff;
-    box-sizing: border-box;
+    border: 3px solid #fff;
+    box-shadow: 0 2px 6px rgba(224, 85, 85, 0.35);
   }
   .bar-ends {
     display: flex;
     justify-content: space-between;
     font-size: 11px;
-    color: #aaa;
-    margin: 4px 0 0 22px;
+    color: #c3bcc8;
+    margin: 6px 0 0 24px;
   }
 
   /* --- メモ --- */
   .memo {
-    width: calc(100% - 22px);
-    margin: 10px 0 0 22px;
-    box-sizing: border-box;
+    width: calc(100% - 24px);
+    margin: 14px 0 0 24px;
     font-size: 15px;
     font-family: inherit;
-    padding: 8px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
+    color: var(--ink);
+    padding: 12px 14px;
+    background: #faf7f9;
+    border: 2px solid #f0e9ee;
+    border-radius: 16px;
     resize: vertical;
-    min-height: 38px;
+    min-height: 46px;
   }
-  .memo::placeholder { color: #bbb; }
+  .memo:focus {
+    outline: none;
+    background: #fff;
+    border-color: #c8b8d8;
+  }
+  .memo::placeholder { color: #c9c2ce; }
 
   /* --- 講義名（タブの上に常に出す） --- */
   .lecture-title {
-    font-size: 18px;
-    margin: 4px 4px 12px;
+    font-size: 21px;
+    font-weight: 700;
+    margin: 6px 6px 4px;
+    letter-spacing: 0.02em;
+  }
+  .lecture-cap {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    color: #c3bcc8;
+    margin: 0 6px 14px;
   }
 
   /* --- タブ（押す / 記録） --- */
@@ -148,118 +320,149 @@
      学生が自分で切り替えるタブにしている。 */
   .tabs {
     display: flex;
-    background: #fff;
-    border-radius: 12px;
-    padding: 4px;
-    margin-bottom: 16px;
+    background: rgba(255, 255, 255, 0.75);
+    border-radius: 999px;
+    padding: 5px;
+    margin-bottom: 18px;
+    box-shadow: 0 4px 16px rgba(120, 96, 110, 0.07);
   }
   .tab {
     flex: 1;
-    padding: 12px;
-    font-size: 16px;
-    font-weight: bold;
+    padding: 13px;
+    font-size: 15px;
+    font-weight: 700;
     font-family: inherit;
-    color: #888;
+    color: var(--ink-soft);
     background: none;
     border: none;
-    border-radius: 9px;
+    border-radius: 999px;
     cursor: pointer;
+    transition: background 0.18s, color 0.18s;
   }
   .tab.active {
-    background: #333;
+    background: linear-gradient(135deg, #7d7391, #625a75);
     color: #fff;
+    box-shadow: 0 4px 12px rgba(98, 90, 117, 0.24);
   }
   .badge {
     display: inline-block;
-    min-width: 18px;
-    padding: 0 5px;
-    margin-left: 6px;
+    min-width: 20px;
+    padding: 0 6px;
+    margin-left: 7px;
     font-size: 12px;
-    line-height: 18px;
-    border-radius: 9px;
-    background: #e05555;
+    line-height: 20px;
+    border-radius: 999px;
+    background: var(--coral);
     color: #fff;
   }
-  .tab.active .badge { background: #fff; color: #333; }
+  .tab.active .badge { background: rgba(255,255,255,0.9); color: #625a75; }
 
   /* --- 仮データで動いているときの表示 --- */
   #mockBanner {
-    background: #444;
+    background: rgba(74, 69, 80, 0.9);
     color: #fff;
-    font-size: 13px;
+    font-size: 12px;
+    font-weight: 700;
     text-align: center;
-    padding: 8px;
-    border-radius: 8px;
-    margin-bottom: 12px;
+    padding: 10px;
+    border-radius: 999px;
+    margin-bottom: 14px;
   }
 
   .sub {
     text-align: center;
     font-size: 13px;
-    color: #888;
-    margin-top: 20px;
+    color: var(--ink-soft);
+    margin-top: 22px;
+    line-height: 2;
   }
-  .sub a { color: #888; }
+  .sub a {
+    color: var(--ink-soft);
+    text-underline-offset: 4px;
+    margin: 0 6px;
+  }
 
-  input[type="text"] {
-    font-size: 24px;
-    padding: 12px;
-    width: 100%;
-    box-sizing: border-box;
+  #error {
+    color: #d4574f;
+    font-size: 14px;
     text-align: center;
-    letter-spacing: 4px;
-    text-transform: uppercase;
   }
-  #error { color: #c00; font-size: 14px; }
+
+  /* 画面が広いときは中央に寄せる（発表でPCに映す場合の保険） */
+  @media (min-width: 560px) {
+    body { padding: 32px 0 60px; }
+    .screen { max-width: 480px; margin: 0 auto; }
+  }
 </style>
 </head>
 <body>
 
-<!-- ① 初回：匿名アカウントの作成 -->
-<div class="screen" id="screenCode">
+<!-- ① 入口：ログインするかどうか選ぶ（未ログインのときだけ出る） -->
+<div class="screen" id="screenChoice">
   <div class="card">
-    <h2>匿名アカウントを作成します</h2>
+    <h2>記録を残しますか？</h2>
     <p class="note">
-      名前もメールアドレスも登録しません。<br>
-      下のコードだけであなたの記録を管理します。
+      ログインすると、自分が押した記録が復習リストとして残ります。<br>
+      名前やメールアドレスは必要ありません。<br>
+      ログインしなくても押せます。その場合の記録は完全に匿名です。
     </p>
 
-    <div class="code" id="newCode">------</div>
+    <button class="btn btn-login"    onclick="showScreen('screenLogin')">ログインして記録を残す</button>
+    <button class="btn btn-register" onclick="showScreen('screenRegister')">新規登録する</button>
+    <button class="btn btn-anon"     onclick="useAnonymous()">ログインせずに使う</button>
+  </div>
+</div>
 
-    <p class="note">
-      別の端末から自分の記録を見たいときに使います。<br>
-      スクリーンショットを撮っておいてください。
-    </p>
 
-    <button class="btn btn-wakaran" onclick="createAccount()">これで始める</button>
+<!-- ② ログイン -->
+<div class="screen" id="screenLogin">
+  <div class="card">
+    <h2>ログイン</h2>
+    <form onsubmit="doLogin(); return false;">
+      <input class="field" type="text"     id="loginUsername" placeholder="ユーザー名" autocomplete="username">
+      <input class="field" type="password" id="loginPassword" placeholder="パスワード" autocomplete="current-password">
+      <p class="err" id="loginError"></p>
+      <button class="btn btn-login" type="submit">ログイン</button>
+    </form>
     <div class="sub">
-      <a href="#" onclick="showScreen('screenRestore');return false;">すでにコードを持っている</a>
+      <a href="#" onclick="showScreen('screenRegister');return false;">アカウントを作る</a>
+      <a href="#" onclick="showScreen('screenChoice');return false;">戻る</a>
     </div>
   </div>
 </div>
 
 
-<!-- ② コードで復元 -->
-<div class="screen" id="screenRestore">
+<!-- ③ 新規登録 -->
+<div class="screen" id="screenRegister">
   <div class="card">
-    <h2>コードを入力</h2>
-    <input type="text" id="restoreInput" placeholder="ABC123" maxlength="6">
-    <br><br>
-    <button class="btn btn-wakaran" onclick="restoreAccount()">復元する</button>
+    <h2>新規登録</h2>
+    <p class="note">
+      ユーザー名とパスワードだけで登録できます。<br>
+      本名でなくて構いません。
+    </p>
+    <form onsubmit="doRegister(); return false;">
+      <input class="field" type="text"     id="regUsername" placeholder="ユーザー名" autocomplete="username">
+      <input class="field" type="password" id="regPassword" placeholder="パスワード" autocomplete="new-password">
+      <input class="field" type="email"    id="regEmail"    placeholder="メールアドレス（任意）" autocomplete="email">
+      <p class="err" id="regError"></p>
+      <button class="btn btn-register" type="submit">登録して始める</button>
+    </form>
     <div class="sub">
-      <a href="#" onclick="showScreen('screenCode');return false;">戻る</a>
+      <a href="#" onclick="showScreen('screenLogin');return false;">ログインはこちら</a>
+      <a href="#" onclick="showScreen('screenChoice');return false;">戻る</a>
     </div>
   </div>
 </div>
 
 
-<!-- ③ メイン：ボタン3つ ＋ 自分の記録 -->
+<!-- ④ メイン：ボタン3つ ＋ 自分の記録 -->
 <div class="screen" id="screenMain">
 
   <div id="mockBanner" style="display:none">
     仮データで動いています（サーバーには保存されません）
   </div>
 
+  <p class="lecture-cap">LECTURE</p>
   <h2 class="lecture-title" id="lectureTitle">講義</h2>
 
   <div class="tabs">
@@ -270,13 +473,14 @@
   <!-- 「押す」タブ：授業中はこれだけ見えていればいい -->
   <div id="tabPress">
     <div class="card">
-      <button class="btn btn-wakaran" id="btn-wakaran" onclick="press('wakaran')">分からん</button>
-      <button class="btn btn-again"   id="btn-again"   onclick="press('again')">もう一回</button>
-      <button class="btn btn-fast"    id="btn-fast"    onclick="press('fast')">速い</button>
+      <div class="press-area">
+        <div class="press-wrap" id="pressWrap">
+          <span class="ripple"></span>
+          <button class="press-btn" id="btn-wakaran" onclick="press()">分からん</button>
+        </div>
+      </div>
 
-      <p class="note" style="text-align:center">
-        押した記録が誰のものかは分かりません
-      </p>
+      <p class="note" style="text-align:center" id="pressNote"></p>
       <div id="error"></div>
     </div>
   </div>
@@ -288,11 +492,9 @@
       <p class="note">授業のあとで、思い出せることをメモしておくと復習に使えます。</p>
       <div id="log"></div>
     </div>
-
-    <div class="sub">
-      あなたのコード：<b id="myCode"></b>
-    </div>
   </div>
+
+  <div class="sub" id="loginStatus"></div>
 
 </div>
 
@@ -304,16 +506,25 @@
 // ============================================
 // 状態
 // ============================================
-let sid = null;            // セッションID
-let clientId = null;       // 匿名アカウントのコード
-let myPresses = [];        // 自分が押した記録
-const COOLDOWN_SEC = 30;   // 連打防止の秒数
+let sid = null;            // 部屋ID（QRの ?sid=）
+let currentUser = null;    // ログイン中なら {id, username}、匿名なら null
+let myPresses = [];        // 自分が押した記録（ログイン中のみ使う）
+let totalPages = null;     // スライドの総ページ数。未登録の講義では null
+
+// 連打について:
+// 以前は30秒のクールダウンを入れていたが、押したいときに押せないほうが
+// 問題という判断で撤去した。何回でも押せる。
+
+// ローカル控え（localStorage）の持ち主を表すキー
+function userKey() {
+  return "user:" + currentUser.id;
+}
 
 
 // ============================================
 // 起動時
 // ============================================
-window.onload = function () {
+window.onload = async function () {
   sid = getSidFromUrl();
 
   if (!sid) {
@@ -322,13 +533,19 @@ window.onload = function () {
     return;
   }
 
-  clientId = getClientId();
+  // ログイン状態を確認する。GET /api/me が
+  // {"user": {id, username, ...}} か {"user": null} を返す。
+  try {
+    const me = await apiGet("/api/me");
+    currentUser = me.user;
+  } catch (e) {
+    currentUser = null;   // サーバーに繋がらなくても匿名で押す画面までは行ける
+  }
 
-  if (clientId) {
-    startMain();                                  // 2回目以降
+  if (currentUser) {
+    startMain();
   } else {
-    document.getElementById("newCode").textContent = genCode();
-    showScreen("screenCode");                     // 初回
+    showScreen("screenChoice");
   }
 };
 
@@ -348,23 +565,68 @@ function switchTab(name) {
 
 
 // ============================================
-// 匿名アカウントの作成 / 復元
+// ログイン / 登録 / 匿名で使う
 // ============================================
-function createAccount() {
-  clientId = document.getElementById("newCode").textContent;
-  saveClientId(clientId);
+async function doLogin() {
+  const username = document.getElementById("loginUsername").value.trim();
+  const password = document.getElementById("loginPassword").value;
+  const errEl = document.getElementById("loginError");
+
+  if (!username || !password) {
+    errEl.textContent = "ユーザー名とパスワードを入力してください";
+    return;
+  }
+
+  try {
+    currentUser = await apiPostForm("/api/login", { username: username, password: password });
+    errEl.textContent = "";
+    startMain();
+  } catch (e) {
+    errEl.textContent = e.message;
+  }
+}
+
+async function doRegister() {
+  const username = document.getElementById("regUsername").value.trim();
+  const password = document.getElementById("regPassword").value;
+  let email = document.getElementById("regEmail").value.trim();
+  const errEl = document.getElementById("regError");
+
+  if (!username || !password) {
+    errEl.textContent = "ユーザー名とパスワードを入力してください";
+    return;
+  }
+
+  // バックエンドが email の重複を弾くため、空のまま2人目が登録すると
+  // 「既に使われています」になってしまう。空欄のときはユーザー名から
+  // 一意なダミーを作って回避する（username が unique なので衝突しない）。
+  if (!email) {
+    email = username + "@no-email.local";
+  }
+
+  try {
+    await apiPostForm("/api/register", { username: username, email: email, password: password });
+    // register はセッションを作らないので、続けてログインする
+    currentUser = await apiPostForm("/api/login", { username: username, password: password });
+    errEl.textContent = "";
+    startMain();
+  } catch (e) {
+    errEl.textContent = e.message;
+  }
+}
+
+function useAnonymous() {
+  currentUser = null;
   startMain();
 }
 
-function restoreAccount() {
-  const v = document.getElementById("restoreInput").value.trim().toUpperCase();
-  if (v.length !== 6) {
-    alert("6桁のコードを入力してください");
-    return;
+async function logout() {
+  try {
+    await apiPostForm("/api/logout", {});
+  } catch (e) {
+    // ログアウトの失敗は握りつぶしてよい（リロードで状態が揃う）
   }
-  clientId = v;
-  saveClientId(clientId);
-  startMain();
+  location.reload();
 }
 
 
@@ -373,7 +635,8 @@ function restoreAccount() {
 // ============================================
 async function startMain() {
   showScreen("screenMain");
-  document.getElementById("myCode").textContent = clientId;
+  switchTab("press");   // どの経路から来ても、授業中の既定は「押す」
+  renderLoginStatus();
 
   if (IS_MOCK) {
     document.getElementById("mockBanner").style.display = "block";
@@ -387,37 +650,61 @@ async function startMain() {
     showError(e.message);
   }
 
-  loadMyPresses();
+  await loadTotalPages();
+
+  if (currentUser) {
+    loadMyPresses();
+  } else {
+    renderLog();
+  }
+}
+
+function renderLoginStatus() {
+  const el = document.getElementById("loginStatus");
+  const note = document.getElementById("pressNote");
+
+  if (currentUser) {
+    el.innerHTML = 'ログイン中：<b></b>　' +
+      '<a href="#" onclick="logout();return false;">ログアウト</a>';
+    el.querySelector("b").textContent = currentUser.username;
+    note.textContent = "押した記録はあなたの復習リストに残ります";
+  } else {
+    el.innerHTML = '匿名で利用中　' +
+      '<a href="#" onclick="showScreen(\'screenChoice\');return false;">ログインする</a>';
+    note.textContent = "ログインしていないので、押した記録は完全に匿名です";
+  }
 }
 
 
 // ============================================
 // ボタンを押したとき
 // ============================================
-async function press(type) {
-  const btn = document.getElementById("btn-" + type);
+async function press() {
+  const type = PRESS_TYPES.WAKARAN;
 
-  // すぐ反応を返す（体感速度が大事）
+  // すぐ反応を返す（体感速度が大事）。連打できるので待たせない。
   toast("記録しました");
   if (navigator.vibrate) navigator.vibrate(50);
-  startCooldown(btn, type);
+  playRipple();
 
   try {
-    const res = await apiPostForm("/api/reaction/" + sid, {
-      type: type,
-      client_id: clientId,
-    });
+    // 誰が押したかはサーバーがセッションで判別する。
+    // どのスライドを映していたかもサーバーが判定して page で返す。
+    const res = await apiPostForm("/api/reaction/" + sid, { type: type });
     clearError();
 
-    // 経過時間はサーバーが計算して返す（端末の時計はズレるため）。
-    // 万一返ってこなかった時だけ、この端末での暫定計算に落とす。
+    if (!currentUser) return;   // 匿名のときは手元に何も残さない
+
+    // page があればそれを使う。スライド未登録の講義では null が返るので、
+    // その場合だけ従来どおり経過時間で並べる。
     const p = {
       id: res.reaction_id,
       type: type,
-      elapsed_sec: res.elapsed_sec != null ? res.elapsed_sec : localElapsedSec(sid),
+      page: res.page != null ? res.page : null,
+      elapsed_sec: localElapsedSec(sid),
     };
     myPresses.push(p);
-    saveMyPressLocal(sid, clientId, p);   // 通信できない時のための控え
+    saveMyPressLocal(sid, userKey(), p);   // 通信できない時のための控え
     renderLog();
   } catch (e) {
     showError(e.message);
@@ -425,24 +712,26 @@ async function press(type) {
 }
 
 
-// ============================================
-// 30秒クールダウン
-// ============================================
-function startCooldown(btn, type) {
-  btn.disabled = true;
-  let left = COOLDOWN_SEC;
-  btn.textContent = "あと" + left + "秒";
+// スライドの総ページ数を取る。進捗バーの分母に使う。
+// この講義でスライドを使っていなければ404が返るので、その時は null のまま。
+async function loadTotalPages() {
+  try {
+    const st = await apiGet("/api/room/" + sid + "/presentation/state");
+    totalPages = st.totalPages != null ? st.totalPages : null;
+  } catch (e) {
+    totalPages = null;
+  }
+}
 
-  const t = setInterval(() => {
-    left--;
-    if (left <= 0) {
-      clearInterval(t);
-      btn.disabled = false;
-      btn.textContent = TYPE_LABEL[type];
-    } else {
-      btn.textContent = "あと" + left + "秒";
-    }
-  }, 1000);
+
+// 押した瞬間に円ボタンから波紋を広げる。
+// クラスを付け直すためにいったん外して、再描画を挟んでから付ける。
+function playRipple() {
+  const wrap = document.getElementById("pressWrap");
+  if (!wrap) return;
+  wrap.classList.remove("is-pressed");
+  void wrap.offsetWidth;
+  wrap.classList.add("is-pressed");
 }
 
 
@@ -451,11 +740,12 @@ function startCooldown(btn, type) {
 // ============================================
 async function loadMyPresses() {
   try {
-    // サーバーから自分の押した分だけ取る（別端末から復元した時もこれで揃う）
-    myPresses = await apiGet("/api/reaction/" + sid + "?client_id=" + clientId);
+    // 取り出しAPIはバックエンドに依頼中で、まだ存在しない。
+    // 出来るまでは失敗して下の控えに落ちる（出来たら自動で切り替わる）。
+    myPresses = await apiGet("/api/reaction/" + sid + "?user_id=" + currentUser.id);
   } catch (e) {
-    // サーバーに繋がらない時はブラウザに残した控えを出す
-    myPresses = loadMyPressesLocal(sid, clientId);
+    // サーバーから取れない時はブラウザに残した控えを出す
+    myPresses = loadMyPressesLocal(sid, userKey());
   }
   renderLog();
 }
@@ -465,9 +755,18 @@ let shownPresses = [];
 
 function renderLog() {
   const box = document.getElementById("log");
+  const badge = document.getElementById("logCount");
+
+  // 匿名のときは記録が残らないことを伝えるだけ
+  if (!currentUser) {
+    badge.style.display = "none";
+    box.innerHTML =
+      '<p class="note">ログインすると、押した記録がここに残って復習に使えます。</p>' +
+      '<div class="sub"><a href="#" onclick="showScreen(\'screenChoice\');return false;">ログイン・登録はこちら</a></div>';
+    return;
+  }
 
   // 「記録」タブを開かなくても何件たまったか分かるようにする
-  const badge = document.getElementById("logCount");
   badge.textContent = myPresses.length;
   badge.style.display = myPresses.length ? "inline-block" : "none";
 
@@ -476,24 +775,39 @@ function renderLog() {
     return;
   }
 
-  shownPresses = myPresses.slice().sort((a, b) => b.elapsed_sec - a.elapsed_sec);
+  // 連打できるようにしたので、同じページを何度も押すと同じ行が並んでしまう。
+  // ページ単位でまとめて、回数を添える。メモもページごとに1つになる。
+  shownPresses = groupPresses(myPresses);
 
   box.innerHTML = shownPresses.map((p, i) => {
-    // 100分の講義のどのあたりで押したか。はみ出さないよう0〜100%に収める。
-    const pct = Math.min(100, Math.max(0, p.elapsed_sec / LECTURE_MAX_SEC * 100));
+    const isPage = p.page != null;
+
+    // ラベルと、バーのどのあたりに印を置くか。
+    // スライドがある講義はページ基準、無ければ従来どおり時間基準。
+    const label = isPage ? p.page + "ページ" : fmtMin(p.elapsed_sec);
+    const pct = isPage
+      ? (totalPages ? (p.page - 0.5) / totalPages * 100 : 50)
+      : p.elapsed_sec / LECTURE_MAX_SEC * 100;
+    const left  = isPage ? "1ページ" : "開始";
+    const right = isPage ? (totalPages ? totalPages + "ページ" : "最後") : "100分";
+
+    const count = p.count > 1
+      ? `<span class="count">${p.count}回</span>`
+      : "";
 
     return `
     <div class="log-item">
       <div class="log-head">
         <div class="log-dot" style="background:${TYPE_COLOR[p.type]}"></div>
-        <div class="log-time">${fmtMin(p.elapsed_sec)}</div>
+        <div class="log-time">${label}</div>
         <div>${TYPE_LABEL[p.type]}</div>
+        ${count}
       </div>
 
       <div class="bar">
-        <div class="bar-mark" style="left:${pct}%;background:${TYPE_COLOR[p.type]}"></div>
+        <div class="bar-mark" style="left:${Math.min(100, Math.max(0, pct))}%;background:${TYPE_COLOR[p.type]}"></div>
       </div>
-      <div class="bar-ends"><span>開始</span><span>100分</span></div>
+      <div class="bar-ends"><span>${left}</span><span>${right}</span></div>
 
       <textarea class="memo"
                 placeholder="メモ（何が分からなかった？）"
@@ -501,6 +815,32 @@ function renderLog() {
     </div>
   `;
   }).join("");
+}
+
+// 同じページの押下をひとまとめにする。
+// ページが取れていない記録（スライド未使用の講義）はまとめずそのまま出す。
+function groupPresses(list) {
+  const byPage = new Map();
+  const byMin = new Map();
+
+  list.forEach(p => {
+    // ページが取れていればページ単位、無ければ分単位でまとめる
+    const map = p.page != null ? byPage : byMin;
+    const key = p.page != null ? p.page : Math.floor(p.elapsed_sec / 60);
+
+    const hit = map.get(key);
+    if (hit) {
+      hit.count++;
+      // 進捗バーと並び順のため、そのまとまりで最初に押した時刻を残す
+      hit.elapsed_sec = Math.min(hit.elapsed_sec, p.elapsed_sec);
+    } else {
+      map.set(key, Object.assign({ count: 1 }, p));
+    }
+  });
+
+  // 新しく押したものを上に出す
+  return [...byPage.values()].sort((a, b) => b.page - a.page)
+    .concat([...byMin.values()].sort((a, b) => b.elapsed_sec - a.elapsed_sec));
 }
 
 function onMemoChange(i, text) {

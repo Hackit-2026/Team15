@@ -35,39 +35,6 @@ const TYPE_COLOR = {
 
 
 // --------------------------------------------
-// 匿名アカウントのコード
-// --------------------------------------------
-
-// 6桁のコードを作る。1とI、0とOなど紛らわしい文字は入れない。
-function genCode() {
-  const chars = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
-  let s = "";
-  for (let i = 0; i < 6; i++) {
-    s += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return s;
-}
-
-// 保存済みのコードを返す。まだ無ければ null を返す。
-function getClientId() {
-  try {
-    return localStorage.getItem("client_id");
-  } catch (e) {
-    return window._fallbackClientId || null;
-  }
-}
-
-// コードを保存する。
-function saveClientId(id) {
-  try {
-    localStorage.setItem("client_id", id);
-  } catch (e) {
-    window._fallbackClientId = id;
-  }
-}
-
-
-// --------------------------------------------
 // 表示のヘルパー
 // --------------------------------------------
 
@@ -90,9 +57,12 @@ function getSidFromUrl() {
 // この2つの中身をfetchに差し替えればいい。呼び出し側は変えなくて済む。
 
 // 記録1件を識別するキー。
-// 将来 press に id が付いたらそれを使う。無い間は種類＋経過秒で代用する。
+// スライドのページが取れていればページ単位で1つ。
+// 同じページを何度押しても、メモは1つにまとまる。
+// スライドを使わない講義ではページが無いので、従来どおり種類＋経過秒で代用する。
 function pressKey(sid, p) {
-  return "memo:" + sid + ":" + (p.id != null ? p.id : p.type + "@" + p.elapsed_sec);
+  if (p.page != null) return "memo:" + sid + ":page:" + p.page;
+  return "memo:" + sid + ":min:" + Math.floor(p.elapsed_sec / 60);
 }
 
 function getMemo(sid, p) {
@@ -120,11 +90,23 @@ function saveMemo(sid, p, text) {
 // API呼び出し
 // --------------------------------------------
 
+// 失敗レスポンスをErrorにする。
+// バックエンドは失敗時に {"error": "..."} を返すので、
+// あればそのまま画面に出せるメッセージとして使う。
+async function apiError(res, path) {
+  let msg = "APIエラー " + res.status + " : " + path;
+  try {
+    const j = await res.json();
+    if (j && j.error) msg = j.error;
+  } catch (e) {}
+  return new Error(msg);
+}
+
 async function apiGet(path) {
   if (IS_MOCK) return mockGet(path);
 
   const res = await fetch(API_BASE + path);
-  if (!res.ok) throw new Error("APIエラー " + res.status + " : " + path);
+  if (!res.ok) throw await apiError(res, path);
   return await res.json();
 }
 
@@ -136,7 +118,7 @@ async function apiPost(path, body) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body || {}),
   });
-  if (!res.ok) throw new Error("APIエラー " + res.status + " : " + path);
+  if (!res.ok) throw await apiError(res, path);
   return await res.json();
 }
 
@@ -150,7 +132,7 @@ async function apiPostForm(path, obj) {
     method: "POST",
     body: new URLSearchParams(obj || {}),
   });
-  if (!res.ok) throw new Error("APIエラー " + res.status + " : " + path);
+  if (!res.ok) throw await apiError(res, path);
   return await res.json();
 }
 
@@ -170,6 +152,12 @@ function roomEnteredAt(sid) {
   let v = null;
   try { v = localStorage.getItem(key); } catch (e) {}
 
+  // 講義の長さより古い記録は、別の日に同じ部屋を開いたときの残骸とみなす。
+  // これが無いと「961分」のような現実にありえない値が出る。
+  if (v && Date.now() - Number(v) > LECTURE_MAX_SEC * 1000) {
+    v = null;
+  }
+
   if (!v) {
     // 仮データモードでは「開始40分後」から始める。
     // 0分だと進捗バーの印が左端に張り付いて見た目を確認しづらいため。
@@ -180,7 +168,8 @@ function roomEnteredAt(sid) {
 }
 
 function localElapsedSec(sid) {
-  return Math.floor((Date.now() - roomEnteredAt(sid)) / 1000);
+  // 初回は記録した瞬間との誤差でマイナスになりうるので0で止める
+  return Math.max(0, Math.floor((Date.now() - roomEnteredAt(sid)) / 1000));
 }
 
 
@@ -224,20 +213,55 @@ function mockRoom(id) {
   return { id: id, name: "情報セキュリティ（仮データ）", isFinished: false };
 }
 
+// 仮データの現在ページ。先生がめくっている様子を再現するため、
+// 30秒ごとに1ページ進む形にしてある（全20ページで折り返す）。
+function mockPage() {
+  return (Math.floor(Date.now() / 30000) % 20) + 1;
+}
+
+// 仮データのログイン状態。ブラウザに覚えさせて、リロードしても保つ。
+function mockLoadUser() {
+  try {
+    return JSON.parse(localStorage.getItem("mock_user") || "null");
+  } catch (e) {
+    return null;
+  }
+}
+
+function mockSaveUser(u) {
+  try {
+    if (u) {
+      localStorage.setItem("mock_user", JSON.stringify(u));
+    } else {
+      localStorage.removeItem("mock_user");
+    }
+  } catch (e) {}
+}
+
 function mockGet(path) {
   const [rawPath, query] = path.split("?");
   const params = new URLSearchParams(query || "");
   const parts = rawPath.split("/").filter(Boolean);  // ["api","room","1"]
+
+  // GET /api/me → ログイン状態 {"user": {...} か null}
+  if (parts[1] === "me") {
+    return { user: mockLoadUser() };
+  }
+
+  // GET /api/room/<id>/presentation/state → スライドの状態
+  if (parts[1] === "room" && parts[3] === "presentation") {
+    return { presentationId: 1, roomId: parts[2], currentPage: mockPage(), totalPages: 20, status: "ready" };
+  }
 
   // GET /api/room/<id> → 部屋の情報
   if (parts[1] === "room") {
     return mockRoom(parts[2]);
   }
 
-  // GET /api/reaction/<id>?client_id=xxx → 自分の押した分
+  // GET /api/reaction/<room_id>?user_id=xxx → 自分の押した分
   // （ブラウザに残した控えをそのまま返す）
   if (parts[1] === "reaction") {
-    return loadMyPressesLocal(parts[2], params.get("client_id"))
+    return loadMyPressesLocal(parts[2], "user:" + params.get("user_id"))
       .map(p => ({ id: p.id, type: p.type, elapsed_sec: p.elapsed_sec }));
   }
 
@@ -249,11 +273,24 @@ let mockNextId = 1;
 function mockPost(path, body) {
   const parts = path.split("/").filter(Boolean);
 
-  // POST /api/reaction/<id> → 実物と同じく部屋の情報＋elapsed_sec を返す
+  // POST /api/login, /api/register → どんな名前でも通す
+  if (parts[1] === "login" || parts[1] === "register") {
+    const u = { id: 1, username: body.username || "テスト" };
+    mockSaveUser(u);
+    return u;
+  }
+
+  // POST /api/logout
+  if (parts[1] === "logout") {
+    mockSaveUser(null);
+    return { message: "ログアウトしました" };
+  }
+
+  // POST /api/reaction/<id> → 実物と同じく部屋の情報＋page を返す
   if (parts[1] === "reaction") {
     const room = mockRoom(parts[2]);
     room.reaction_id = mockNextId++;
-    room.elapsed_sec = localElapsedSec(parts[2]);
+    room.page = mockPage();
     return room;
   }
 

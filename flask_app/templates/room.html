@@ -2,78 +2,24 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>講義フィードバック</title>
+  <!-- QRの飛び先はこのURL（/room/<id>）のまま。
+       参加者に見せる画面を static/student.html に一本化したので、
+       ここは sid を付けて橋渡しするだけにしてある。
+
+       元々ここにあった簡易版の参加者画面（🤔わからんボタン、
+       participantId / eventId の送信）は student.html 側には無い。
+       エフェクト機能でその送信が必要なら言ってください。
+       student.html 側に足します（学生画面はこちらの担当）。 -->
+  <meta http-equiv="refresh" content="0; url=/static/student.html?sid={{ room_id }}">
 </head>
 <body>
-  <h1 id="room-name"></h1>
-
-  <div id="finished" style="display:none;">
-    <h1>この講義は終了しています</h1>
-  </div>
-
-  <form id="reaction-form" style="display:none;">
-    <button id="confusedButton" type="submit">🤔 わからん</button>
-    <p id="reaction-status" role="status"></p>
-  </form>
-
+  <p style="font-family: sans-serif; padding: 16px;">
+    <a href="/static/student.html?sid={{ room_id }}">画面が切り替わらない場合はこちら</a>
+  </p>
   <script>
-    const roomId = "{{ room_id }}";
-    const reactionForm = document.getElementById("reaction-form");
-    const confusedButton = document.getElementById("confusedButton");
-    const reactionStatus = document.getElementById("reaction-status");
-
-    function createId() {
-      return globalThis.crypto?.randomUUID?.()
-        ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-    }
-
-    function getParticipantId() {
-      const storageKey = "team15-participant-id";
-      let participantId = localStorage.getItem(storageKey);
-      if (!participantId) {
-        participantId = createId();
-        localStorage.setItem(storageKey, participantId);
-      }
-      return participantId;
-    }
-
-    async function loadRoom() {
-      const res = await fetch(`/api/room/${roomId}`);
-      const data = await res.json();
-
-      document.getElementById("room-name").textContent = data.name;
-      document.getElementById("finished").style.display = data.isFinished ? "block" : "none";
-      reactionForm.style.display = data.isFinished ? "none" : "block";
-    }
-    loadRoom();
-
-    reactionForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      confusedButton.disabled = true;
-      reactionStatus.textContent = "送信中...";
-      try {
-        const response = await fetch(`/api/reaction/${roomId}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            type: "confused",
-            participantId: getParticipantId(),
-            eventId: createId(),
-          }),
-        });
-        if (!response.ok) {
-          throw new Error();
-        }
-        reactionStatus.textContent = "🤔 講師に送りました";
-      } catch {
-        reactionStatus.textContent = "送信できませんでした";
-      } finally {
-        window.setTimeout(() => {
-          confusedButton.disabled = false;
-        }, 800);
-      }
-    });
+    location.replace("/static/student.html?sid={{ room_id }}");
   </script>
 </body>
 </html>
