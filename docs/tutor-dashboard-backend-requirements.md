@@ -39,7 +39,8 @@ User 1 --- N Course 1 --- N Room 1 --- N Reaction
 - 作成者は必ず `session["user_id"]` にする。
 - `name` は必須。
 - `total_lectures` は任意。未指定の場合は `null` とする。
-- MVPでは `(user_id, name)` を一意にし、同じ講師の同名授業には `409` を返す。
+  - MVPでは `(user_id, name)` を一意にし、同じ講師の同名授業には `409` を返す。
+  - 
 - リクエストは `application/json` とする。
 
 #### リクエスト例
