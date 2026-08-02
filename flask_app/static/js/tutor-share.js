@@ -28,16 +28,19 @@ async function loadShareRoom() {
         shareRoomName.textContent = data.display_name ?? data.name;
         shareRoomStatus.textContent = data.isFinished ? "終了" : "開講中";
         shareRoomStatus.classList.toggle("is-finished", data.isFinished);
+        roomQrCode.hidden = true;
+        qrCodePlaceholder.hidden = false;
+        qrCodePlaceholder.textContent = "QRコードを読み込んでいます";
+        roomQrCode.src = `/api/qrcreate/${encodeURIComponent(roomId)}`;
     } catch (error) {
         shareRoomName.textContent = "ルーム情報を取得できませんでした";
         shareRoomStatus.textContent = "取得失敗";
         shareRoomStatus.classList.add("is-finished");
         shareMessage.textContent = error.message;
+        roomQrCode.hidden = true;
+        qrCodePlaceholder.hidden = false;
+        qrCodePlaceholder.textContent = "QRコードを表示できませんでした";
     }
-
-    roomQrCode.hidden = true;
-    qrCodePlaceholder.hidden = false;
-    qrCodePlaceholder.textContent = "QRコードAPIの準備後に表示されます";
 }
 
 roomQrCode.addEventListener("load", () => {
@@ -48,7 +51,7 @@ roomQrCode.addEventListener("load", () => {
 roomQrCode.addEventListener("error", () => {
     roomQrCode.hidden = true;
     qrCodePlaceholder.hidden = false;
-    qrCodePlaceholder.textContent = "QRコードAPIの準備後に表示されます";
+    qrCodePlaceholder.textContent = "QRコードを表示できませんでした";
 });
 
 copyRoomUrl.addEventListener("click", async () => {
@@ -60,5 +63,26 @@ copyRoomUrl.addEventListener("click", async () => {
         shareMessage.textContent = "URLを選択しました。コピーしてください";
     }
 });
+
+async function loadSubjectList() {
+    try {
+        const response = await fetch("/api/rooms", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ user_id: 1 }),
+        });
+        const rooms = await response.json();
+
+        if (!response.ok) {
+            throw new Error(rooms.error ?? "科目一覧を取得できませんでした");
+        }
+
+        const subjectList = document.getElementById("subjectList");
+        subjectList.innerHTML = rooms.map(room => `<li>${room.name}</li>`).join("");
+    } catch (error) {
+        const subjectList = document.getElementById("subjectList");
+        subjectList.innerHTML = `<li>取得失敗: ${error.message}</li>`;
+    }
+}
 
 loadShareRoom();

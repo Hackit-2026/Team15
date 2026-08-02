@@ -32,9 +32,50 @@
         </section>
 
         <section class="presentation-shell" id="presentationShell" hidden>
+            <div class="effect-settings-bar">
+                <button
+                    class="effect-settings-toggle"
+                    id="effectSettingsToggle"
+                    type="button"
+                    aria-expanded="false"
+                    aria-controls="effectSettingsPanel"
+                >⚙ 演出設定</button>
+                <span id="effectConnectionStatus">バックエンドとの同期を確認中...</span>
+            </div>
+
+            <form class="effect-settings-panel" id="effectSettingsPanel" hidden>
+                <label class="effect-switch">
+                    <input id="emojiEffectEnabled" type="checkbox" checked>
+                    <span>🤔をスライド下部から表示</span>
+                </label>
+                <label class="effect-switch">
+                    <input id="crackEffectEnabled" type="checkbox">
+                    <span>発動前にヒビを表示</span>
+                </label>
+                <label class="effect-switch effect-switch--danger">
+                    <input id="destructionEnabled" type="checkbox">
+                    <span>閾値でスライド破壊を発動</span>
+                </label>
+                <label class="threshold-field" for="destructionThreshold">
+                    <span>発動人数</span>
+                    <input id="destructionThreshold" type="number" min="2" max="100" value="5">
+                    <span>人</span>
+                </label>
+                <div class="effect-settings-actions">
+                    <button class="effect-save" type="submit">設定を保存</button>
+                    <button id="previewReaction" type="button">🤔をテスト</button>
+                    <button id="previewDestruction" type="button">破壊をテスト</button>
+                </div>
+                <p id="effectSettingsMessage" role="status"></p>
+            </form>
+
             <div class="presentation-stage" id="presentationStage">
                 <div class="slide-viewport" id="slideViewport">
                     <canvas id="slideCanvas" aria-label="現在のPDFスライド"></canvas>
+                    <div class="slide-crack-layer" id="slideCrackLayer" aria-hidden="true"></div>
+                    <div class="reaction-emoji-layer" id="reactionEmojiLayer" aria-hidden="true"></div>
+                    <div class="slide-destruction-layer" id="slideDestructionLayer" aria-hidden="true"></div>
+                    <div class="reaction-meter" id="reactionMeter" aria-live="polite">🤔 0 / 5人</div>
                 </div>
 
                 <div class="presentation-controls" aria-label="プレゼンテーション操作">

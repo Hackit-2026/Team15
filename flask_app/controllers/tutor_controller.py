@@ -14,6 +14,11 @@ def tutor_login():
   return render_template("tutor/login.html", title="講師ログイン")
 
 
+@tutor_routes.route("/rooms")
+def tutor_rooms():
+  return render_template("tutor/rooms.html", title="講義一覧")
+
+
 @tutor_routes.route("/room/<int:room_id>")
 def tutor_room(room_id):
   return render_template(
@@ -38,4 +43,12 @@ def tutor_room_presentation(room_id):
     "tutor/presentation.html",
     title="プレゼンテーション",
     room_id=room_id,
+  )
+
+
+@tutor_routes.route("/rooms")
+def tutor_rooms():
+  return render_template(
+    "tutor/rooms.html",
+    title="科目一覧",
   )

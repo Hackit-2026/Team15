@@ -6,6 +6,13 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from models import Reaction, Room, User, db
 
+import io
+
+import qrcode
+from qrcode.constants import ERROR_CORRECT_H
+
+from flask import send_file
+
 main = Blueprint('main', __name__, url_prefix='/api')
 
 
@@ -91,10 +98,15 @@ def create_room():
   return jsonify(room_to_dict(room)), 201
 
 
-@main.route("/rooms", methods=["GET"])
+@main.route("/rooms", methods=["GET", "POST"])
 @login_required
 def list_rooms():
-  user_id = request.args.get("user_id", "").strip()
+  if request.method == "POST":
+    data = request.get_json(silent=True) or {}
+    user_id = str(data.get("user_id", "")).strip()
+  else:
+    user_id = request.args.get("user_id", "").strip()
+
   if not user_id:
     return jsonify({"error": "user_idを指定してください"}), 400
 
@@ -130,6 +142,29 @@ def send_reaction(id):
   return jsonify(room_to_dict(room)), 201
 
 
+@main.route("/qrcreate/<id>", methods=["GET"])
+def qr(id):
+  url = "http://127.0.0.1:5000/room/" + id
+  if not url:
+    return jsonify({"error": "url parameter is required"}), 400
+
+  qr_code = qrcode.QRCode(
+    version=None,
+    error_correction=ERROR_CORRECT_H,
+    box_size=10,
+    border=4,
+  )
+  qr_code.add_data(url)
+  qr_code.make(fit=True)
+  img = qr_code.make_image(fill_color="black", back_color="white")
+
+  buf = io.BytesIO()
+  img.save(buf)
+  buf.seek(0)
+  return send_file(buf, mimetype="image/png")
+
+
+
 # @main.route("/room_setting/<id>")
 # def room_setting(id):
 #   room = Room.get_by_id(id)
@@ -153,16 +188,3 @@ def send_reaction(id):
 #     room = Room.close_room(id)
 
 #   return jsonify(room_to_dict(room))
-
-
-@main.route("/reactions/room/<room_id>")
-def reactions_by_room_id(room_id):
-  reactions = Reaction.get_all_by_room_id(room_id)
-  return jsonify({"reactionCount": len(reactions)})
-
-
-@main.route("/reactions/user/<user_id>")
-def reactions_by_user_id(user_id):
-  reactions = Reaction.get_all_by_user_id(user_id)
-  counts = Counter(r.room_id for r in reactions)
-  return jsonify([{"roomId": room_id, "reactionCount": count} for room_id, count in counts.items()])

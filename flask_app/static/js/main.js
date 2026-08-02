@@ -16,17 +16,13 @@ const dashboardLoading = document.getElementById("dashboardLoading");
 const dashboardUnavailable = document.getElementById("dashboardUnavailable");
 const dashboardUnavailableMessage = document.getElementById("dashboardUnavailableMessage");
 const retryDashboardButton = document.getElementById("retryDashboardButton");
-const activeRoomList = document.getElementById("activeRoomList");
-const noActiveRoom = document.getElementById("noActiveRoom");
-const recentRoomTable = document.getElementById("recentRoomTable");
-const recentRoomList = document.getElementById("recentRoomList");
-const recentRoomEmpty = document.getElementById("recentRoomEmpty");
+const lectureRoomList = document.getElementById("lectureRoomList");
+const noLectureRoom = document.getElementById("noLectureRoom");
 const activeRoomCount = document.getElementById("activeRoomCount");
 const totalReactionCount = document.getElementById("totalReactionCount");
 const mostConfusingRoomName = document.getElementById("mostConfusingRoomName");
 const mostConfusingRoomCount = document.getElementById("mostConfusingRoomCount");
-const activeRoomTemplate = document.getElementById("activeRoomTemplate");
-const recentRoomRowTemplate = document.getElementById("recentRoomRowTemplate");
+const lectureRoomTemplate = document.getElementById("lectureRoomTemplate");
 const headerCreateButton = document.querySelector(".header-create-button");
 const headerCreateButtonLabel = headerCreateButton.querySelector(".header-create-button__label");
 const accountMenu = document.querySelector(".account-menu");
@@ -70,27 +66,10 @@ function openRoomCreator(shouldFocus = true) {
 
 function showDashboardState(state, message = "") {
     dashboardLoading.hidden = state !== "loading";
-    activeRoomList.hidden = state !== "active";
-    noActiveRoom.hidden = state !== "empty";
+    lectureRoomList.hidden = state !== "list";
+    noLectureRoom.hidden = state !== "empty";
     dashboardUnavailable.hidden = state !== "error";
     dashboardUnavailableMessage.textContent = message;
-}
-
-function formatDate(value) {
-    if (!value) {
-        return "日時未登録";
-    }
-
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) {
-        return "日時未登録";
-    }
-
-    return new Intl.DateTimeFormat("ja-JP", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-    }).format(date);
 }
 
 async function copyRoomUrl(roomId) {
@@ -104,42 +83,27 @@ async function copyRoomUrl(roomId) {
     }
 }
 
-function renderActiveRooms(rooms) {
-    activeRoomList.replaceChildren();
+function renderLectureRooms(rooms) {
+    lectureRoomList.replaceChildren();
 
     rooms.forEach((room) => {
-        const card = activeRoomTemplate.content.firstElementChild.cloneNode(true);
+        const card = lectureRoomTemplate.content.firstElementChild.cloneNode(true);
         card.querySelector(".js-room-name").textContent = room.name;
         card.querySelector(".js-room-id").textContent = room.id;
         card.querySelector(".js-reaction-count").textContent = room.reaction_count ?? 0;
 
+        const status = card.querySelector(".status-badge");
+        status.textContent = room.isFinished ? "終了" : "開講中";
+        status.classList.toggle("is-finished", room.isFinished);
+        card.classList.toggle("is-finished", room.isFinished);
+
         const copyButton = card.querySelector(".js-copy-room-url");
+        copyButton.hidden = room.isFinished;
         copyButton.addEventListener("click", () => copyRoomUrl(room.id));
 
         const manageLink = card.querySelector(".js-manage-room");
         manageLink.href = `/tutor/room/${room.id}`;
-        activeRoomList.append(card);
-    });
-}
-
-function renderRecentRooms(rooms) {
-    recentRoomList.replaceChildren();
-    recentRoomTable.hidden = rooms.length === 0;
-    recentRoomEmpty.hidden = rooms.length !== 0;
-
-    rooms.forEach((room) => {
-        const row = recentRoomRowTemplate.content.firstElementChild.cloneNode(true);
-        row.querySelector(".js-room-name").textContent = room.name;
-        row.querySelector(".js-reaction-count").textContent = room.reaction_count ?? 0;
-        row.querySelector(".js-created-at").textContent = formatDate(room.created_at);
-
-        const status = row.querySelector(".js-room-status");
-        status.textContent = room.isFinished ? "終了" : "開講中";
-        status.classList.toggle("is-finished", room.isFinished);
-
-        const manageLink = row.querySelector(".js-manage-room");
-        manageLink.href = `/tutor/room/${room.id}`;
-        recentRoomList.append(row);
+        lectureRoomList.append(card);
     });
 }
 
@@ -159,16 +123,15 @@ function renderOverview(summary, activeRooms) {
 }
 
 function renderDashboard(data) {
+    const rooms = Array.isArray(data.rooms) ? data.rooms : [];
     const activeRooms = Array.isArray(data.active_rooms) ? data.active_rooms : [];
-    const recentRooms = Array.isArray(data.recent_rooms) ? data.recent_rooms : [];
     const summary = data.summary ?? {};
 
     renderOverview(summary, activeRooms);
-    renderRecentRooms(recentRooms);
 
-    if (activeRooms.length > 0) {
-        renderActiveRooms(activeRooms);
-        showDashboardState("active");
+    if (rooms.length > 0) {
+        renderLectureRooms(rooms);
+        showDashboardState("list");
         return;
     }
 
@@ -220,13 +183,15 @@ async function loadDashboard(userId) {
 
         const roomsWithReactions = await Promise.all(
             rooms.map(async (room) => {
+                // 件数API（/api/reactions/room/<id>）は現在バックエンドに存在しない。
+                // 無い間は0件として表示を成立させ、復活したらそのまま件数が出る。
                 try {
                     const reactionResponse = await fetch(`/api/reactions/room/${room.id}`);
+                    if (!reactionResponse.ok) {
+                        return { ...room, reaction_count: 0 };
+                    }
                     const reactionData = await reactionResponse.json();
-                    return {
-                        ...room,
-                        reaction_count: reactionResponse.ok ? reactionData.reactionCount ?? 0 : 0,
-                    };
+                    return { ...room, reaction_count: reactionData.reactionCount ?? 0 };
                 } catch {
                     return { ...room, reaction_count: 0 };
                 }
@@ -247,8 +212,8 @@ async function loadDashboard(userId) {
         );
 
         renderDashboard({
+            rooms: sortedRooms,
             active_rooms: activeRooms,
-            recent_rooms: sortedRooms.slice(0, 10),
             summary: {
                 active_room_count: activeRooms.length,
                 total_room_count: sortedRooms.length,

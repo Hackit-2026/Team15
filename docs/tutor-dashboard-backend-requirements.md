@@ -161,7 +161,7 @@ User 1 --- N Course 1 --- N Room 1 --- N Reaction
       "isFinished": false,
       "started_at": "2026-08-02T09:00:00+09:00",
       "reaction_count": 18,
-      "wakaran_count": 10
+      "wakaran_count": 18
     }
   ],
   "recent_rooms": [
@@ -175,7 +175,7 @@ User 1 --- N Course 1 --- N Room 1 --- N Reaction
       "isFinished": true,
       "started_at": "2026-08-01T13:00:00+09:00",
       "reaction_count": 24,
-      "wakaran_count": 14
+      "wakaran_count": 24
     }
   ],
   "summary": {
@@ -188,7 +188,7 @@ User 1 --- N Course 1 --- N Room 1 --- N Reaction
       "course_name": "ネットワーク基礎",
       "lecture_number": 3,
       "display_name": "ネットワーク基礎 第3回",
-      "wakaran_count": 14,
+      "wakaran_count": 24,
       "reaction_count": 24
     }
   }
@@ -271,10 +271,20 @@ User 1 --- N Course 1 --- N Room 1 --- N Reaction
 
 | 項目 | 型 | 用途 | 優先度 |
 |---|---|---|---|
-| `reaction_type` | String / Enum | `wakaran`, `again`, `fast` の種類別集計 | 必須 |
 | `created_at` | DateTime | 時系列と本日分の集計 | 必須 |
 
-現状の `Reaction` は `room_id` しか持たないため、リアクション総数は数えられるが、「わからない」だけは集計できない。
+2026-08-02更新（学生側の仕様変更にあわせて修正）
+
+学生側のボタンを「分からん」1つに絞ったため、`reaction_type` は不要になった。
+リアクションはすべて「わからない」なので、種類別の集計という概念自体が無くなり、
+`wakaran_count` は `reaction_count` と常に同じ値になる。
+種類別集計を復活させたい場合は、先に学生画面へボタンを戻す必要がある。
+
+`user_id`（nullable）はバックエンド側で対応済み。未ログインの学生も押せるため、
+匿名の押下では `null` が入る。
+
+残っているのは `created_at` だけで、これが無いと「何分の時点で押されたか」が
+分からず、時系列グラフが作れない。
 
 ## 集計ルール
 
@@ -297,9 +307,12 @@ LIMIT 10
 
 ### 最も「わからない」が多かった講義
 
-`reaction_type` 追加後は、講師が所有する終了済みルームを対象に `reaction_type == "wakaran"` の件数を集計する。
+講師が所有する終了済みルームを対象に、リアクション件数が最も多いルームを返す。
 
-追加前のMVPでは、リアクション総数が最多い授業を代用表示し、`reaction_count` を返す。
+学生側のボタンが「分からん」1つだけなので、リアクション総数がそのまま
+「わからない」の件数になる。`wakaran_count` と `reaction_count` には同じ値を入れてよい。
+フロントの `main.js` は `wakaran_count ?? reaction_count` の順に読むため、
+どちらか一方だけを返しても表示は成立する。
 
 ## 今後の改善候補
 
