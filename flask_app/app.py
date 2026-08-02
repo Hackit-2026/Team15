@@ -13,7 +13,7 @@ base_dir = os.path.dirname(__file__)
 
 app = Flask(__name__)
 app.secret_key = "dev-secret-key-change-me"
-app.config["APP_NAME"] = "サンプルアプリ名"
+app.config["APP_NAME"] = "Checkit"
 app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024  # 50MB
 
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(base_dir, "data.sqlite")
