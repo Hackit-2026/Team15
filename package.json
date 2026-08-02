@@ -3,8 +3,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "vite build",
-    "build:projection": "vite build --config vite.projection.config.ts",
+    "prepare:pdfjs": "node scripts/copy-pdfjs-assets.mjs",
+    "patch:presentation-pdf": "node scripts/patch-presentation-pdf-assets.mjs",
+    "build": "npm run prepare:pdfjs && vite build",
+    "build:projection": "npm run prepare:pdfjs && vite build --config vite.projection.config.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
