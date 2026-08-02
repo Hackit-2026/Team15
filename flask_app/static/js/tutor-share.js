@@ -28,20 +28,19 @@ async function loadShareRoom() {
         shareRoomName.textContent = data.display_name ?? data.name;
         shareRoomStatus.textContent = data.isFinished ? "終了" : "開講中";
         shareRoomStatus.classList.toggle("is-finished", data.isFinished);
-        roomQrCode.width = 320;
-        roomQrCode.height = 320;
-        roomQrCode.src = `/api/qrcreate?url=${encodeURIComponent(studentRoomUrl.value)}`;
-        await loadSubjectList();
+        roomQrCode.hidden = true;
+        qrCodePlaceholder.hidden = false;
+        qrCodePlaceholder.textContent = "QRコードを読み込んでいます";
+        roomQrCode.src = `/api/qrcreate/${encodeURIComponent(roomId)}`;
     } catch (error) {
         shareRoomName.textContent = "ルーム情報を取得できませんでした";
         shareRoomStatus.textContent = "取得失敗";
         shareRoomStatus.classList.add("is-finished");
         shareMessage.textContent = error.message;
+        roomQrCode.hidden = true;
+        qrCodePlaceholder.hidden = false;
+        qrCodePlaceholder.textContent = "QRコードを表示できませんでした";
     }
-
-    roomQrCode.hidden = true;
-    qrCodePlaceholder.hidden = false;
-    qrCodePlaceholder.textContent = "QRコードAPIの準備後に表示されます";
 }
 
 roomQrCode.addEventListener("load", () => {
@@ -52,7 +51,7 @@ roomQrCode.addEventListener("load", () => {
 roomQrCode.addEventListener("error", () => {
     roomQrCode.hidden = true;
     qrCodePlaceholder.hidden = false;
-    qrCodePlaceholder.textContent = "QRコードAPIの準備後に表示されます";
+    qrCodePlaceholder.textContent = "QRコードを表示できませんでした";
 });
 
 copyRoomUrl.addEventListener("click", async () => {

@@ -13,11 +13,30 @@
   </div>
 
   <form id="reaction-form" style="display:none;">
-    <button type="submit">わからん</button>
+    <button id="confusedButton" type="submit">🤔 わからん</button>
+    <p id="reaction-status" role="status"></p>
   </form>
 
   <script>
     const roomId = "{{ room_id }}";
+    const reactionForm = document.getElementById("reaction-form");
+    const confusedButton = document.getElementById("confusedButton");
+    const reactionStatus = document.getElementById("reaction-status");
+
+    function createId() {
+      return globalThis.crypto?.randomUUID?.()
+        ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    }
+
+    function getParticipantId() {
+      const storageKey = "team15-participant-id";
+      let participantId = localStorage.getItem(storageKey);
+      if (!participantId) {
+        participantId = createId();
+        localStorage.setItem(storageKey, participantId);
+      }
+      return participantId;
+    }
 
     async function loadRoom() {
       const res = await fetch(`/api/room/${roomId}`);
@@ -25,14 +44,35 @@
 
       document.getElementById("room-name").textContent = data.name;
       document.getElementById("finished").style.display = data.isFinished ? "block" : "none";
-      document.getElementById("reaction-form").style.display = data.isFinished ? "none" : "block";
+      reactionForm.style.display = data.isFinished ? "none" : "block";
     }
     loadRoom();
 
-    document.getElementById("reaction-form").addEventListener("submit", async (e) => {
+    reactionForm.addEventListener("submit", async (e) => {
       e.preventDefault();
-      await fetch(`/api/reaction/${roomId}`, { method: "POST" });
-      loadRoom();
+      confusedButton.disabled = true;
+      reactionStatus.textContent = "送信中...";
+      try {
+        const response = await fetch(`/api/reaction/${roomId}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: "confused",
+            participantId: getParticipantId(),
+            eventId: createId(),
+          }),
+        });
+        if (!response.ok) {
+          throw new Error();
+        }
+        reactionStatus.textContent = "🤔 講師に送りました";
+      } catch {
+        reactionStatus.textContent = "送信できませんでした";
+      } finally {
+        window.setTimeout(() => {
+          confusedButton.disabled = false;
+        }, 800);
+      }
     });
   </script>
 </body>
