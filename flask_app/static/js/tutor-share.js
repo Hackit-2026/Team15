@@ -28,6 +28,9 @@ async function loadShareRoom() {
         shareRoomName.textContent = data.display_name ?? data.name;
         shareRoomStatus.textContent = data.isFinished ? "終了" : "開講中";
         shareRoomStatus.classList.toggle("is-finished", data.isFinished);
+        roomQrCode.width = 320;
+        roomQrCode.height = 320;
+        roomQrCode.src = `/api/qrcreate?url=${encodeURIComponent(studentRoomUrl.value)}`;
     } catch (error) {
         shareRoomName.textContent = "ルーム情報を取得できませんでした";
         shareRoomStatus.textContent = "取得失敗";
