@@ -21,3 +21,12 @@ def tutor_room(room_id):
     title="ルーム管理",
     room_id=room_id,
   )
+
+
+@tutor_routes.route("/room/<int:room_id>/share")
+def tutor_room_share(room_id):
+  return render_template(
+    "tutor/share.html",
+    title="参加者に共有",
+    room_id=room_id,
+  )

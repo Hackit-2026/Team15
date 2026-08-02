@@ -1,8 +1,7 @@
 const roomId = document.body.dataset.roomId;
 const roomName = document.getElementById("roomName");
 const roomStatus = document.getElementById("roomStatus");
-const studentRoomUrl = document.getElementById("studentRoomUrl");
-const copyRoomUrl = document.getElementById("copyRoomUrl");
+const openShareWindow = document.getElementById("openShareWindow");
 const closeRoomForm = document.getElementById("closeRoomForm");
 const closeRoomButton = document.getElementById("closeRoomButton");
 const roomMessage = document.getElementById("roomMessage");
@@ -34,6 +33,7 @@ async function loadRoom() {
         roomStatus.classList.add("is-finished");
         roomMessage.textContent = data.error ?? "ルーム情報を取得できませんでした";
         closeRoomButton.disabled = true;
+        openShareWindow.disabled = true;
         return;
     }
 
@@ -41,17 +41,27 @@ async function loadRoom() {
     roomStatus.textContent = data.isFinished ? "終了" : "開講中";
     roomStatus.classList.toggle("is-finished", data.isFinished);
     closeRoomButton.disabled = data.isFinished;
-    studentRoomUrl.value = `${window.location.origin}/room/${roomId}`;
+    openShareWindow.disabled = false;
 }
 
-copyRoomUrl.addEventListener("click", async () => {
-    try {
-        await navigator.clipboard.writeText(studentRoomUrl.value);
-        roomMessage.textContent = "参加者用URLをコピーしました";
-    } catch {
-        studentRoomUrl.select();
-        roomMessage.textContent = "URLを選択しました。コピーしてください";
+openShareWindow.addEventListener("click", () => {
+    const width = 960;
+    const height = 720;
+    const left = Math.max(0, window.screenX + (window.outerWidth - width) / 2);
+    const top = Math.max(0, window.screenY + (window.outerHeight - height) / 2);
+    const features = `popup=yes,width=${width},height=${height},left=${left},top=${top}`;
+    const shareWindow = window.open(
+        `/tutor/room/${roomId}/share`,
+        `room-share-${roomId}`,
+        features,
+    );
+
+    if (!shareWindow) {
+        roomMessage.textContent = "共有ウィンドウを開けませんでした。ポップアップを許可してください";
+        return;
     }
+
+    shareWindow.focus();
 });
 
 closeRoomForm.addEventListener("submit", async (event) => {
