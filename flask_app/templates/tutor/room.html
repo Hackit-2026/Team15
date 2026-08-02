@@ -41,6 +41,7 @@
 
             <form id="closeRoomForm" class="room-panel__actions">
                 <a class="secondary-button" href="{{ url_for('tutor.tutor_main') }}">ホームに戻る</a>
+                <a class="primary-button" href="{{ url_for('tutor.tutor_room_presentation', room_id=room_id) }}">プレゼンテーション</a>
                 <button class="danger-button" id="closeRoomButton" type="submit">講義を終了する</button>
             </form>
             <p class="room-panel__message" id="roomMessage" role="status"></p>

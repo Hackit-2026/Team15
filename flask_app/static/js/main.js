@@ -178,10 +178,13 @@ function renderDashboard(data) {
 
 async function loadTutor() {
     try {
-        const response = await fetch("/api/");
+        const response = await fetch("/api/me");
         const data = await response.json();
 
-        if (!data.user) {
+        if (!response.ok || !data.user?.isTutor) {
+            if (data.user && !data.user.isTutor) {
+                await fetch("/api/logout", { method: "POST" });
+            }
             window.location.href = "/tutor/login";
             return false;
         }
@@ -196,33 +199,9 @@ async function loadTutor() {
 }
 
 async function loadDashboard() {
-    showDashboardState("loading");
     dashboardMessage.textContent = "";
-
-    try {
-        const response = await fetch("/api/tutor/dashboard");
-
-        if (response.status === 401) {
-            window.location.href = "/tutor/login";
-            return;
-        }
-
-        if (response.status === 404) {
-            throw new Error("講義一覧APIは現在準備中です。ルーム作成は利用できます。");
-        }
-
-        const data = await response.json();
-        if (!response.ok) {
-            throw new Error(data.error ?? "ダッシュボードを取得できませんでした");
-        }
-
-        renderDashboard(data);
-    } catch (error) {
-        showDashboardState(
-            "error",
-            error.message || "バックエンドAPIの準備後に表示できます。",
-        );
-    }
+    retryDashboardButton.hidden = true;
+    showDashboardState("error", "講義一覧APIは現在準備中です。ルーム作成は利用できます。");
 }
 
 headerCreateButton.addEventListener("click", () => {

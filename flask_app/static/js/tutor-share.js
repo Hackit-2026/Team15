@@ -11,6 +11,13 @@ async function loadShareRoom() {
     studentRoomUrl.value = `${window.location.origin}/room/${roomId}`;
 
     try {
+        const meResponse = await fetch("/api/me");
+        const meData = await meResponse.json();
+        if (!meResponse.ok || !meData.user?.isTutor) {
+            window.location.href = "/tutor/login";
+            return;
+        }
+
         const response = await fetch(`/api/room_setting/${roomId}`);
         const data = await response.json();
 
@@ -28,7 +35,9 @@ async function loadShareRoom() {
         shareMessage.textContent = error.message;
     }
 
-    roomQrCode.src = `/api/room/${roomId}/qr`;
+    roomQrCode.hidden = true;
+    qrCodePlaceholder.hidden = false;
+    qrCodePlaceholder.textContent = "QRコードAPIの準備後に表示されます";
 }
 
 roomQrCode.addEventListener("load", () => {

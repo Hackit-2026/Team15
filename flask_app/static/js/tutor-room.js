@@ -10,10 +10,13 @@ const logoutLink = document.getElementById("logoutLink");
 const accountMenu = document.querySelector(".account-menu");
 
 async function loadTutor() {
-    const response = await fetch("/api/");
+    const response = await fetch("/api/me");
     const data = await response.json();
 
-    if (!data.user) {
+    if (!response.ok || !data.user?.isTutor) {
+        if (data.user && !data.user.isTutor) {
+            await fetch("/api/logout", { method: "POST" });
+        }
         window.location.href = "/tutor/login";
         return false;
     }

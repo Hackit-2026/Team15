@@ -55,6 +55,14 @@ tutorLoginForm.addEventListener("submit", async (event) => {
             return;
         }
 
+        const meResponse = await fetch("/api/me");
+        const meData = await meResponse.json();
+        if (!meResponse.ok || !meData.user?.isTutor) {
+            await fetch("/api/logout", { method: "POST" });
+            loginMessage.textContent = "講師アカウントでログインしてください";
+            return;
+        }
+
         window.location.href = "/tutor/";
     } catch {
         loginMessage.textContent = "通信に失敗しました。時間をおいて再度お試しください";
@@ -79,7 +87,7 @@ tutorRegisterForm.addEventListener("submit", async (event) => {
     setFormBusy(tutorRegisterForm, true);
 
     try {
-        const response = await fetch("/api/register", {
+        const response = await fetch("/api/register/tutor", {
             method: "POST",
             body: new FormData(tutorRegisterForm),
         });

@@ -30,3 +30,12 @@ def tutor_room_share(room_id):
     title="参加者に共有",
     room_id=room_id,
   )
+
+
+@tutor_routes.route("/room/<int:room_id>/presentation")
+def tutor_room_presentation(room_id):
+  return render_template(
+    "tutor/presentation.html",
+    title="プレゼンテーション",
+    room_id=room_id,
+  )
