@@ -17,6 +17,13 @@ type PresentationMetadata = {
 };
 
 const MAX_RENDER_PIXELS = 12_000_000;
+const PDF_RESOURCE_OPTIONS = {
+  cMapUrl: "/static/pdfjs/cmaps/",
+  cMapPacked: true,
+  standardFontDataUrl: "/static/pdfjs/standard_fonts/",
+  wasmUrl: "/static/pdfjs/wasm/",
+  useSystemFonts: true,
+} as const;
 
 function delay(milliseconds: number): Promise<void> {
   return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
@@ -113,7 +120,7 @@ class ProjectionRenderer {
           }
           const bytes = new Uint8Array(await fileResponse.arrayBuffer());
           await this.releaseDocument();
-          this.loadingTask = getDocument({ data: bytes });
+          this.loadingTask = getDocument({ data: bytes, ...PDF_RESOURCE_OPTIONS });
           this.document = await this.loadingTask.promise;
           this.loadedFilename = metadata.originalFilename;
           this.currentPage = Math.min(
