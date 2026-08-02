@@ -1,0 +1,320 @@
+:root {
+    --ink: #172033;
+    --muted: #697386;
+    --line: #dfe4ec;
+    --surface: #ffffff;
+    --canvas: #f4f6fb;
+    --primary: #3457d5;
+    --primary-hover: #2948bd;
+    --danger: #c43c4d;
+    --control-radius: 999px;
+    --card-radius: 28px;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    min-width: 320px;
+    min-height: 100vh;
+    margin: 0;
+    background: var(--canvas);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans JP", sans-serif;
+}
+
+button,
+input {
+    font: inherit;
+}
+
+button {
+    cursor: pointer;
+}
+
+button:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+}
+
+.presentation-header {
+    position: sticky;
+    z-index: 10;
+    top: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 50px;
+    padding: 0 24px;
+    border-bottom: 1px solid rgba(23, 32, 51, 0.08);
+    background: rgba(255, 255, 255, 0.94);
+    backdrop-filter: blur(16px);
+}
+
+.presentation-header a {
+    color: var(--primary);
+    font-size: 0.88rem;
+    font-weight: 700;
+    text-decoration: none;
+}
+
+.presentation-header span {
+    color: var(--muted);
+    font-size: 0.82rem;
+}
+
+.presentation-page {
+    width: min(100%, 1240px);
+    margin: 0 auto;
+    padding: 36px 28px 72px;
+}
+
+.pdf-upload-panel {
+    display: grid;
+    grid-template-columns: minmax(240px, 0.7fr) minmax(320px, 1.3fr);
+    align-items: center;
+    gap: 30px;
+    padding: 28px;
+    border: 1px solid rgba(23, 32, 51, 0.08);
+    border-radius: var(--card-radius);
+    background: var(--surface);
+}
+
+.presentation-kicker {
+    margin: 0;
+    color: var(--primary);
+    font-size: 0.72rem;
+    font-weight: 750;
+    letter-spacing: 0.16em;
+}
+
+.pdf-upload-panel h1 {
+    margin: 5px 0 8px;
+    font-size: clamp(1.7rem, 4vw, 2.5rem);
+}
+
+.pdf-upload-panel > div > p:last-child,
+.pdf-upload-status {
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.6;
+}
+
+.pdf-dropzone {
+    display: grid;
+    min-height: 150px;
+    padding: 24px;
+    place-items: center;
+    border: 2px dashed #bbc5d6;
+    border-radius: 22px;
+    background: #fafbfe;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+
+.pdf-dropzone:hover,
+.pdf-dropzone.is-dragging {
+    border-color: var(--primary);
+    background: #eef2ff;
+}
+
+.pdf-dropzone.is-dragging {
+    transform: scale(1.01);
+}
+
+.pdf-dropzone.is-loading {
+    cursor: wait;
+    opacity: 0.65;
+}
+
+.pdf-dropzone input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+}
+
+.pdf-dropzone strong {
+    color: var(--primary);
+    font-size: 1.1rem;
+}
+
+.pdf-dropzone span,
+.pdf-dropzone small {
+    color: var(--muted);
+}
+
+.pdf-dropzone small {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pdf-upload-status,
+.presentation-error {
+    grid-column: 1 / -1;
+    min-height: 1.3em;
+    font-size: 0.86rem;
+}
+
+.presentation-error {
+    margin: -18px 0 0;
+    color: var(--danger);
+}
+
+.presentation-shell {
+    margin-top: 28px;
+}
+
+.presentation-stage {
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) auto;
+    width: 100%;
+    height: min(72vh, 760px);
+    min-height: 480px;
+    overflow: hidden;
+    border-radius: var(--card-radius);
+    background: #090d16;
+    box-shadow: 0 20px 52px rgba(16, 23, 38, 0.18);
+}
+
+.slide-viewport {
+    display: grid;
+    min-width: 0;
+    min-height: 0;
+    padding: 20px;
+    place-items: center;
+    overflow: hidden;
+}
+
+#slideCanvas {
+    display: block;
+    max-width: 100%;
+    max-height: 100%;
+    background: white;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.24);
+}
+
+.presentation-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(12, 17, 28, 0.96);
+    color: white;
+}
+
+.presentation-controls p {
+    min-width: 72px;
+    margin: 0;
+    text-align: center;
+}
+
+.presentation-controls button {
+    min-height: 38px;
+    padding: 8px 15px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--control-radius);
+    background: transparent;
+    color: white;
+    font-weight: 700;
+}
+
+.presentation-controls button:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.presentation-controls .presentation-start {
+    border-color: var(--primary);
+    background: var(--primary);
+}
+
+.presentation-controls .presentation-start:hover:not(:disabled) {
+    background: var(--primary-hover);
+}
+
+.presentation-controls .presentation-end {
+    border-color: var(--danger);
+    color: #ffb8c1;
+}
+
+.presentation-help {
+    margin: 12px 0 0;
+    color: var(--muted);
+    font-size: 0.82rem;
+    text-align: center;
+}
+
+.presentation-stage:fullscreen {
+    width: 100vw;
+    height: 100vh;
+    min-height: 0;
+    border-radius: 0;
+}
+
+.presentation-stage:fullscreen .slide-viewport {
+    padding: 24px;
+}
+
+[hidden] {
+    display: none !important;
+}
+
+@media (max-width: 720px) {
+    .presentation-header {
+        padding: 0 14px;
+    }
+
+    .presentation-header span {
+        display: none;
+    }
+
+    .presentation-page {
+        padding: 22px 14px 50px;
+    }
+
+    .pdf-upload-panel {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 20px;
+        padding: 22px;
+        border-radius: 22px;
+    }
+
+    .presentation-stage {
+        height: 68dvh;
+        min-height: 420px;
+        border-radius: 22px;
+    }
+
+    .slide-viewport {
+        padding: 10px;
+    }
+
+    .presentation-controls {
+        flex-wrap: wrap;
+        padding: 10px;
+    }
+
+    .presentation-controls button {
+        padding: 8px 12px;
+    }
+
+    .presentation-controls .presentation-start,
+    .presentation-controls .presentation-end {
+        flex-basis: 100%;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        transition-duration: 0.01ms !important;
+    }
+}

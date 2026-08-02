@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <title>{{ app_name }} - {{ title }}</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="PDFプレゼンテーション画面">
+    <link rel="stylesheet" href="{{ url_for('static', filename='tutor/presentation.css') }}">
+    <script type="module" src="{{ url_for('static', filename='dist/presentation.js') }}"></script>
+</head>
+<body data-room-id="{{ room_id }}">
+    <header class="presentation-header">
+        <a href="{{ url_for('tutor.tutor_room', room_id=room_id) }}">← ルーム管理へ戻る</a>
+        <span>{{ app_name }} - PDFプレゼンテーション</span>
+    </header>
+
+    <main class="presentation-page">
+        <section class="pdf-upload-panel" aria-labelledby="pdfUploadTitle">
+            <div>
+                <p class="presentation-kicker">PDF SLIDES</p>
+                <h1 id="pdfUploadTitle">スライドを選択</h1>
+                <p>PDFはブラウザ内で読み込みます。最大50MBです。</p>
+            </div>
+            <label class="pdf-dropzone" id="pdfDropzone" for="pdfFileInput">
+                <input id="pdfFileInput" type="file" accept="application/pdf,.pdf">
+                <strong>PDFを選択</strong>
+                <span>または、ここへドラッグ＆ドロップ</span>
+                <small id="selectedFileName">ファイルが選択されていません</small>
+            </label>
+            <p class="pdf-upload-status" id="pdfUploadStatus" role="status"></p>
+            <p class="presentation-error" id="presentationError" role="alert"></p>
+        </section>
+
+        <section class="presentation-shell" id="presentationShell" hidden>
+            <div class="presentation-stage" id="presentationStage">
+                <div class="slide-viewport" id="slideViewport">
+                    <canvas id="slideCanvas" aria-label="現在のPDFスライド"></canvas>
+                </div>
+
+                <div class="presentation-controls" aria-label="プレゼンテーション操作">
+                    <button id="previousSlide" type="button">← 前へ</button>
+                    <p><strong id="currentPage">1</strong> / <span id="totalPages">0</span></p>
+                    <button id="nextSlide" type="button">次へ →</button>
+                    <button id="toggleFullscreen" type="button">全画面</button>
+                    <button class="presentation-start" id="startPresentation" type="button">プレゼン開始</button>
+                    <button class="presentation-end" id="endPresentation" type="button" hidden>終了</button>
+                </div>
+            </div>
+            <p class="presentation-help">← → でページ移動、Fで全画面、Escで終了</p>
+        </section>
+    </main>
+</body>
+</html>
