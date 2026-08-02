@@ -2,38 +2,19 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>講義フィードバック</title>
+  <!-- QRの飛び先はこのURL（/room/<id>）で固定。
+       学生画面の実体は static/student.html に一本化してあり、
+       ここは sid を付けて橋渡しするだけ。 -->
+  <meta http-equiv="refresh" content="0; url=/static/student.html?sid={{ room_id }}">
 </head>
 <body>
-  <h1 id="room-name"></h1>
-
-  <div id="finished" style="display:none;">
-    <h1>この講義は終了しています</h1>
-  </div>
-
-  <form id="reaction-form" style="display:none;">
-    <button type="submit">わからん</button>
-  </form>
-
+  <p style="font-family: sans-serif; padding: 16px;">
+    <a href="/static/student.html?sid={{ room_id }}">画面が切り替わらない場合はこちら</a>
+  </p>
   <script>
-    const roomId = "{{ room_id }}";
-
-    async function loadRoom() {
-      const res = await fetch(`/api/room/${roomId}`);
-      const data = await res.json();
-
-      document.getElementById("room-name").textContent = data.name;
-      document.getElementById("finished").style.display = data.isFinished ? "block" : "none";
-      document.getElementById("reaction-form").style.display = data.isFinished ? "none" : "block";
-    }
-    loadRoom();
-
-    document.getElementById("reaction-form").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      await fetch(`/api/reaction/${roomId}`, { method: "POST" });
-      loadRoom();
-    });
+    location.replace("/static/student.html?sid={{ room_id }}");
   </script>
 </body>
 </html>
