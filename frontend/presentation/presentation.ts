@@ -291,5 +291,20 @@ class PdfPresentationController {
   }
 }
 
-const roomId = document.body.dataset.roomId ?? "local";
-new PdfPresentationController(`room-${roomId}`);
+async function bootstrapPresentation(): Promise<void> {
+  try {
+    const response = await fetch("/api/me");
+    const data = await response.json() as { user?: { isTutor?: boolean } | null };
+    if (!response.ok || !data.user?.isTutor) {
+      window.location.href = "/tutor/login";
+      return;
+    }
+
+    const roomId = document.body.dataset.roomId ?? "local";
+    new PdfPresentationController(`room-${roomId}`);
+  } catch {
+    window.location.href = "/tutor/login";
+  }
+}
+
+void bootstrapPresentation();

@@ -16,17 +16,13 @@ const dashboardLoading = document.getElementById("dashboardLoading");
 const dashboardUnavailable = document.getElementById("dashboardUnavailable");
 const dashboardUnavailableMessage = document.getElementById("dashboardUnavailableMessage");
 const retryDashboardButton = document.getElementById("retryDashboardButton");
-const activeRoomList = document.getElementById("activeRoomList");
-const noActiveRoom = document.getElementById("noActiveRoom");
-const recentRoomTable = document.getElementById("recentRoomTable");
-const recentRoomList = document.getElementById("recentRoomList");
-const recentRoomEmpty = document.getElementById("recentRoomEmpty");
+const lectureRoomList = document.getElementById("lectureRoomList");
+const noLectureRoom = document.getElementById("noLectureRoom");
 const activeRoomCount = document.getElementById("activeRoomCount");
 const totalReactionCount = document.getElementById("totalReactionCount");
 const mostConfusingRoomName = document.getElementById("mostConfusingRoomName");
 const mostConfusingRoomCount = document.getElementById("mostConfusingRoomCount");
-const activeRoomTemplate = document.getElementById("activeRoomTemplate");
-const recentRoomRowTemplate = document.getElementById("recentRoomRowTemplate");
+const lectureRoomTemplate = document.getElementById("lectureRoomTemplate");
 const headerCreateButton = document.querySelector(".header-create-button");
 const headerCreateButtonLabel = headerCreateButton.querySelector(".header-create-button__label");
 const accountMenu = document.querySelector(".account-menu");
@@ -70,27 +66,10 @@ function openRoomCreator(shouldFocus = true) {
 
 function showDashboardState(state, message = "") {
     dashboardLoading.hidden = state !== "loading";
-    activeRoomList.hidden = state !== "active";
-    noActiveRoom.hidden = state !== "empty";
+    lectureRoomList.hidden = state !== "list";
+    noLectureRoom.hidden = state !== "empty";
     dashboardUnavailable.hidden = state !== "error";
     dashboardUnavailableMessage.textContent = message;
-}
-
-function formatDate(value) {
-    if (!value) {
-        return "日時未登録";
-    }
-
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) {
-        return "日時未登録";
-    }
-
-    return new Intl.DateTimeFormat("ja-JP", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-    }).format(date);
 }
 
 async function copyRoomUrl(roomId) {
@@ -104,42 +83,27 @@ async function copyRoomUrl(roomId) {
     }
 }
 
-function renderActiveRooms(rooms) {
-    activeRoomList.replaceChildren();
+function renderLectureRooms(rooms) {
+    lectureRoomList.replaceChildren();
 
     rooms.forEach((room) => {
-        const card = activeRoomTemplate.content.firstElementChild.cloneNode(true);
+        const card = lectureRoomTemplate.content.firstElementChild.cloneNode(true);
         card.querySelector(".js-room-name").textContent = room.name;
         card.querySelector(".js-room-id").textContent = room.id;
         card.querySelector(".js-reaction-count").textContent = room.reaction_count ?? 0;
 
+        const status = card.querySelector(".status-badge");
+        status.textContent = room.isFinished ? "終了" : "開講中";
+        status.classList.toggle("is-finished", room.isFinished);
+        card.classList.toggle("is-finished", room.isFinished);
+
         const copyButton = card.querySelector(".js-copy-room-url");
+        copyButton.hidden = room.isFinished;
         copyButton.addEventListener("click", () => copyRoomUrl(room.id));
 
         const manageLink = card.querySelector(".js-manage-room");
         manageLink.href = `/tutor/room/${room.id}`;
-        activeRoomList.append(card);
-    });
-}
-
-function renderRecentRooms(rooms) {
-    recentRoomList.replaceChildren();
-    recentRoomTable.hidden = rooms.length === 0;
-    recentRoomEmpty.hidden = rooms.length !== 0;
-
-    rooms.forEach((room) => {
-        const row = recentRoomRowTemplate.content.firstElementChild.cloneNode(true);
-        row.querySelector(".js-room-name").textContent = room.name;
-        row.querySelector(".js-reaction-count").textContent = room.reaction_count ?? 0;
-        row.querySelector(".js-created-at").textContent = formatDate(room.created_at);
-
-        const status = row.querySelector(".js-room-status");
-        status.textContent = room.isFinished ? "終了" : "開講中";
-        status.classList.toggle("is-finished", room.isFinished);
-
-        const manageLink = row.querySelector(".js-manage-room");
-        manageLink.href = `/tutor/room/${room.id}`;
-        recentRoomList.append(row);
+        lectureRoomList.append(card);
     });
 }
 
@@ -159,16 +123,15 @@ function renderOverview(summary, activeRooms) {
 }
 
 function renderDashboard(data) {
+    const rooms = Array.isArray(data.rooms) ? data.rooms : [];
     const activeRooms = Array.isArray(data.active_rooms) ? data.active_rooms : [];
-    const recentRooms = Array.isArray(data.recent_rooms) ? data.recent_rooms : [];
     const summary = data.summary ?? {};
 
     renderOverview(summary, activeRooms);
-    renderRecentRooms(recentRooms);
 
-    if (activeRooms.length > 0) {
-        renderActiveRooms(activeRooms);
-        showDashboardState("active");
+    if (rooms.length > 0) {
+        renderLectureRooms(rooms);
+        showDashboardState("list");
         return;
     }
 
@@ -191,17 +154,79 @@ async function loadTutor() {
 
         headerTutorUsername.textContent = data.user.username;
         dashboardTutorUsername.textContent = data.user.username;
-        return true;
+        return data.user;
     } catch {
         dashboardMessage.textContent = "ログイン情報を確認できませんでした";
         return false;
     }
 }
 
-async function loadDashboard() {
+async function loadDashboard(userId) {
     dashboardMessage.textContent = "";
     retryDashboardButton.hidden = true;
-    showDashboardState("error", "講義一覧APIは現在準備中です。ルーム作成は利用できます。");
+    showDashboardState("loading");
+
+    try {
+        const roomsResponse = await fetch(`/api/rooms?user_id=${encodeURIComponent(userId)}`);
+        if (roomsResponse.status === 401) {
+            window.location.href = "/tutor/login";
+            return;
+        }
+
+        const rooms = await roomsResponse.json();
+        if (!roomsResponse.ok) {
+            throw new Error(rooms.error ?? "講義一覧を取得できませんでした");
+        }
+        if (!Array.isArray(rooms)) {
+            throw new Error("講義一覧の形式が正しくありません");
+        }
+
+        const roomsWithReactions = await Promise.all(
+            rooms.map(async (room) => {
+                try {
+                    const reactionResponse = await fetch(`/api/reactions/room/${room.id}`);
+                    const reactionData = await reactionResponse.json();
+                    return {
+                        ...room,
+                        reaction_count: reactionResponse.ok ? reactionData.reactionCount ?? 0 : 0,
+                    };
+                } catch {
+                    return { ...room, reaction_count: 0 };
+                }
+            }),
+        );
+
+        const sortedRooms = roomsWithReactions.sort((a, b) => Number(b.id) - Number(a.id));
+        const activeRooms = sortedRooms.filter((room) => !room.isFinished);
+        const totalReactionCountValue = sortedRooms.reduce(
+            (total, room) => total + (room.reaction_count ?? 0),
+            0,
+        );
+        const mostConfusingRoom = sortedRooms.reduce(
+            (current, room) => (
+                !current || room.reaction_count > current.reaction_count ? room : current
+            ),
+            null,
+        );
+
+        renderDashboard({
+            rooms: sortedRooms,
+            active_rooms: activeRooms,
+            summary: {
+                active_room_count: activeRooms.length,
+                total_room_count: sortedRooms.length,
+                total_reaction_count: totalReactionCountValue,
+                most_confusing_room:
+                    mostConfusingRoom?.reaction_count > 0 ? mostConfusingRoom : null,
+            },
+        });
+    } catch (error) {
+        retryDashboardButton.hidden = false;
+        showDashboardState(
+            "error",
+            error.message || "講義一覧を取得できませんでした。",
+        );
+    }
 }
 
 headerCreateButton.addEventListener("click", () => {
@@ -283,7 +308,13 @@ mobileViewport.addEventListener("change", () => {
     setMobileRoomCreatorOpen(false, false);
 });
 
-retryDashboardButton.addEventListener("click", loadDashboard);
+let currentTutorId = null;
+
+retryDashboardButton.addEventListener("click", () => {
+    if (currentTutorId !== null) {
+        loadDashboard(currentTutorId);
+    }
+});
 
 logoutLink.addEventListener("click", async (event) => {
     event.preventDefault();
@@ -291,9 +322,10 @@ logoutLink.addEventListener("click", async (event) => {
     window.location.href = "/tutor/login";
 });
 
-loadTutor().then((isLoggedIn) => {
-    if (isLoggedIn) {
-        loadDashboard();
+loadTutor().then((user) => {
+    if (user) {
+        currentTutorId = user.id;
+        loadDashboard(user.id);
     }
 });
 

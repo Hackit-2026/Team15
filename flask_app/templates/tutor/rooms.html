@@ -1,0 +1,212 @@
+html_content = """<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>シラバス / 授業科目一覧</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg-color: #f8fafc;
+            --text-main: #1e293b;
+            --card-bg: #ffffff;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', 'Arial', 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+
+        header {
+            background: linear-gradient(135deg, #1e40af, #3b82f6);
+            color: white;
+            padding: 3rem 2rem;
+            text-align: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2.2rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+        }
+
+        header p {
+            margin: 0.5rem 0 0;
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: -2rem auto 3rem;
+            padding: 0 1rem;
+            position: relative;
+            z-index: 10;
+        }
+
+        .search-bar {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2.5rem;
+            display: flex;
+            gap: 1rem;
+        }
+
+        .search-bar input {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .search-bar input:focus {
+            border-color: var(--primary);
+        }
+
+        .search-bar button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 0 1.5rem;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .search-bar button:hover {
+            background: var(--primary-hover);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #f1f5f9;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+
+        .card h2 {
+            margin: 0 0 1.5rem;
+            font-size: 1.25rem;
+            color: var(--text-main);
+            line-height: 1.4;
+            flex-grow: 1;
+        }
+
+        .card-footer {
+            border-top: 1px solid #e2e8f0;
+            padding-top: 1rem;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .syllabus-link {
+            color: var(--primary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .syllabus-link:hover {
+            text-decoration: underline;
+        }
+
+        .syllabus-link::after {
+            content: "→";
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>○○さんの科目一覧</h1>
+        
+    </header>
+
+    <div class="container">
+        
+
+        <div class="grid">
+            
+            <div class="card">
+                <h2>ネットワーク工学特論</h2>
+                <div class="card-footer">
+                    <a href="#" class="syllabus-link">授業詳細</a>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>サイバーセキュリティ概論</h2>
+                <div class="card-footer">
+                    <a href="#" class="syllabus-link">授業詳細</a>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>解析学 I</h2>
+                <div class="card-footer">
+                    <a href="#" class="syllabus-link">授業詳細</a>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>ソフトウェア・リテラシー</h2>
+                <div class="card-footer">
+                    <a href="#" class="syllabus-link">授業詳細</a>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>プロジェクトデザイン演習</h2>
+                <div class="card-footer">
+                    <a href="#" class="syllabus-link">授業詳細</a>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>環境デザイン論</h2>
+                <div class="card-footer">
+                    <a href="#" class="syllabus-link">授業詳細</a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</body>
+</html>
+"""
+
+with open('/mnt/data/course_list_simple.html', 'w', encoding='utf-8') as f:
+    f.write(html_content)
+
+print("File updated successfully.")
