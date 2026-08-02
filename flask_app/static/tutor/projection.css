@@ -22,6 +22,7 @@ button {
 }
 
 .projection-stage {
+    --share-panel-width: clamp(280px, 25vw, 440px);
     position: relative;
     display: grid;
     width: 100vw;
@@ -32,15 +33,47 @@ button {
 }
 
 #projectionSlide {
+    position: absolute;
     z-index: 1;
+    top: 0;
+    bottom: 0;
+    left: 0;
     display: block;
     width: 100%;
     height: 100%;
     object-fit: contain;
+    object-position: center;
     box-shadow: 0 20px 70px rgba(0, 0, 0, 0.48);
+    transition: width 0.36s cubic-bezier(0.22, 0.72, 0.24, 1);
+}
+
+.projection-stage.has-share-panel #projectionSlide {
+    width: calc(100% - var(--share-panel-width));
+}
+
+#projectionCanvas {
+    position: absolute;
+    z-index: 1;
+    display: block;
+    background: white;
+    box-shadow: 0 20px 70px rgba(0, 0, 0, 0.48);
+    transition:
+        top 0.36s cubic-bezier(0.22, 0.72, 0.24, 1),
+        left 0.36s cubic-bezier(0.22, 0.72, 0.24, 1),
+        width 0.36s cubic-bezier(0.22, 0.72, 0.24, 1),
+        height 0.36s cubic-bezier(0.22, 0.72, 0.24, 1);
+}
+
+.projection-stage.has-hires-slide #projectionSlide {
+    visibility: hidden;
+}
+
+.projection-stage.is-exploding #projectionCanvas {
+    visibility: hidden;
 }
 
 #projectionSlide[hidden],
+#projectionCanvas[hidden],
 [hidden] {
     display: none !important;
 }
@@ -55,6 +88,11 @@ button {
     color: white;
     text-align: center;
     backdrop-filter: blur(18px);
+    transition: transform 0.36s cubic-bezier(0.22, 0.72, 0.24, 1);
+}
+
+.projection-stage.has-share-panel .projection-guide {
+    transform: translateX(calc(var(--share-panel-width) / -2));
 }
 
 .projection-guide h1 {
@@ -120,6 +158,131 @@ button {
     background: rgba(196, 60, 77, 0.9);
 }
 
+.projection-window-button--share {
+    font-size: 0.68rem;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+}
+
+.projection-window-button--share[aria-expanded="true"] {
+    border-color: rgba(142, 166, 255, 0.68);
+    background: rgba(52, 87, 213, 0.88);
+}
+
+.projection-share-panel {
+    position: absolute;
+    z-index: 8;
+    top: 0;
+    right: 0;
+    display: flex;
+    width: var(--share-panel-width);
+    height: 100%;
+    padding: clamp(76px, 8vh, 110px) clamp(18px, 2.2vw, 36px) clamp(22px, 3vh, 40px);
+    align-items: center;
+    flex-direction: column;
+    overflow-y: auto;
+    border-left: 1px solid rgba(255, 255, 255, 0.12);
+    background:
+        radial-gradient(circle at 50% 20%, rgba(65, 91, 190, 0.24), transparent 38%),
+        rgba(9, 13, 23, 0.96);
+    color: white;
+    text-align: center;
+    transform: translateX(100%);
+    visibility: hidden;
+    box-shadow: -22px 0 60px rgba(0, 0, 0, 0.3);
+    transition:
+        transform 0.36s cubic-bezier(0.22, 0.72, 0.24, 1),
+        visibility 0s linear 0.36s;
+}
+
+.projection-stage.has-share-panel .projection-share-panel {
+    transform: translateX(0);
+    visibility: visible;
+    transition-delay: 0s;
+}
+
+.projection-share-kicker {
+    margin: 0;
+    color: #8ea6ff;
+    font-size: clamp(0.62rem, 0.8vw, 0.82rem);
+    font-weight: 850;
+    letter-spacing: 0.18em;
+}
+
+.projection-share-panel h2 {
+    margin: 7px 0 clamp(16px, 2.5vh, 28px);
+    font-size: clamp(1.15rem, 1.65vw, 1.8rem);
+}
+
+.projection-share-qr {
+    display: grid;
+    width: min(100%, 340px);
+    aspect-ratio: 1;
+    padding: clamp(10px, 1vw, 16px);
+    place-items: center;
+    border-radius: clamp(18px, 1.8vw, 28px);
+    background: white;
+    box-shadow: 0 18px 46px rgba(0, 0, 0, 0.34);
+}
+
+.projection-share-qr img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.projection-share-qr p {
+    color: #697386;
+    font-size: 0.8rem;
+}
+
+.projection-share-url {
+    width: 100%;
+    margin-top: clamp(14px, 2vh, 24px);
+    text-align: left;
+}
+
+.projection-share-url span {
+    display: block;
+    margin-bottom: 5px;
+    color: #8996ad;
+    font-size: 0.68rem;
+    font-weight: 750;
+}
+
+.projection-share-url strong {
+    display: block;
+    overflow-wrap: anywhere;
+    color: #e8edff;
+    font-size: clamp(0.7rem, 0.9vw, 0.86rem);
+    line-height: 1.5;
+}
+
+.projection-share-copy {
+    width: 100%;
+    min-height: 42px;
+    margin-top: 14px;
+    padding: 8px 16px;
+    border: 1px solid rgba(142, 166, 255, 0.5);
+    border-radius: 999px;
+    background: rgba(52, 87, 213, 0.26);
+    color: white;
+    font-weight: 800;
+}
+
+.projection-share-copy:hover,
+.projection-share-copy:focus-visible {
+    background: rgba(52, 87, 213, 0.48);
+}
+
+.projection-share-message {
+    min-height: 1.2em;
+    margin: 9px 0 0;
+    color: #aeb9ce;
+    font-size: 0.72rem;
+}
+
 .projection-guide small {
     display: block;
     color: #8996ad;
@@ -131,6 +294,11 @@ button {
     display: flex;
     align-items: center;
     gap: 8px;
+    transition: right 0.36s cubic-bezier(0.22, 0.72, 0.24, 1);
+}
+
+.projection-stage.has-share-panel .projection-stats {
+    right: calc(var(--share-panel-width) + 20px);
 }
 
 .projection-page,
@@ -157,6 +325,13 @@ button {
     inset: 0;
     overflow: hidden;
     pointer-events: none;
+    transition: right 0.36s cubic-bezier(0.22, 0.72, 0.24, 1);
+}
+
+.projection-stage.has-share-panel .projection-emojis,
+.projection-stage.has-share-panel .projection-destruction,
+.projection-stage.has-share-panel .projection-cracks {
+    right: var(--share-panel-width);
 }
 
 .projection-emojis {

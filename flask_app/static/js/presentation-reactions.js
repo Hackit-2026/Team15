@@ -20,10 +20,19 @@
     const previewReactionButton = document.getElementById("previewReaction");
     const previewDestructionButton = document.getElementById("previewDestruction");
     const openProjectionButton = document.getElementById("openProjection");
+    const openShareButton = document.getElementById("openPresentationShare");
+    const qrToggleButton = document.getElementById("togglePresentationQr");
+    const qrOverlay = document.getElementById("presentationQrOverlay");
+    const qrCloseButton = document.getElementById("closePresentationQr");
+    const qrImage = document.getElementById("presentationQrImage");
+    const qrStatus = document.getElementById("presentationQrStatus");
+    const qrUrl = document.getElementById("presentationQrUrl");
     const previousSlideButton = document.getElementById("previousSlide");
     const nextSlideButton = document.getElementById("nextSlide");
     const totalPagesElement = document.getElementById("totalPages");
     const selectedFileName = document.getElementById("selectedFileName");
+    const uploadPanel = document.querySelector(".pdf-upload-panel");
+    const presentationShell = document.getElementById("presentationShell");
     const settingsStorageKey = `team15-presentation-effects:${roomId}`;
     const projectionChannel = "BroadcastChannel" in window
         ? new BroadcastChannel(`team15-presentation:${roomId}`)
@@ -40,6 +49,14 @@
         || !reactionMeter
         || !settingsToggle
         || !settingsPanel
+        || !uploadPanel
+        || !presentationShell
+        || !qrToggleButton
+        || !qrOverlay
+        || !qrCloseButton
+        || !qrImage
+        || !qrStatus
+        || !qrUrl
     ) {
         return;
     }
@@ -55,6 +72,14 @@
     let lastFrameSignature = "";
     let frameCaptureInProgress = false;
     let frameRetryGeneration = 0;
+
+    function updateUploadPanelSize() {
+        uploadPanel.classList.toggle("is-compact", !presentationShell.hidden);
+    }
+
+    const shellObserver = new MutationObserver(updateUploadPanelSize);
+    shellObserver.observe(presentationShell, { attributes: true, attributeFilter: ["hidden"] });
+    updateUploadPanelSize();
 
     function getThreshold() {
         return Math.min(100, Math.max(2, Math.trunc(Number(thresholdInput?.value) || 5)));
@@ -317,6 +342,7 @@
                 blob,
                 currentPage: Number(currentPageElement.textContent) || 1,
                 totalPages: Number(totalPagesElement?.textContent) || 0,
+                fileName: selectedFileName?.textContent || "",
             });
         }, "image/png");
     }
@@ -378,6 +404,51 @@
         window.setTimeout(() => captureSlideFrame(true), 350);
     }
 
+    function openShareWindow() {
+        const width = Math.min(960, window.screen.availWidth || 960);
+        const height = Math.min(720, window.screen.availHeight || 720);
+        const left = Math.max(0, window.screenX + (window.outerWidth - width) / 2);
+        const top = Math.max(0, window.screenY + (window.outerHeight - height) / 2);
+        const shareWindow = window.open(
+            `/tutor/room/${encodeURIComponent(roomId)}/share`,
+            `room-share-${roomId}`,
+            `popup=yes,width=${width},height=${height},left=${left},top=${top}`,
+        );
+
+        if (!shareWindow) {
+            connectionStatus.textContent = "共有画面を開けません。ポップアップを許可してください";
+            return;
+        }
+        shareWindow.focus();
+    }
+
+    function setQrOverlay(open) {
+        qrOverlay.hidden = !open;
+        qrToggleButton.textContent = open ? "QRを閉じる" : "QR表示";
+        qrToggleButton.setAttribute("aria-expanded", String(open));
+        if (!open) {
+            return;
+        }
+
+        qrUrl.textContent = `${window.location.origin}/room/${roomId}`;
+        if (!qrImage.getAttribute("src")) {
+            qrStatus.hidden = false;
+            qrImage.hidden = true;
+            qrImage.src = `/api/qrcreate/${encodeURIComponent(roomId)}`;
+        }
+        qrCloseButton.focus();
+    }
+
+    qrImage.addEventListener("load", () => {
+        qrImage.hidden = false;
+        qrStatus.hidden = true;
+    });
+    qrImage.addEventListener("error", () => {
+        qrImage.hidden = true;
+        qrStatus.hidden = false;
+        qrStatus.textContent = "QRコードを表示できませんでした";
+    });
+
     async function pollReactions() {
         if (polling) {
             return;
@@ -435,6 +506,26 @@
     pageObserver.observe(currentPageElement, { childList: true, characterData: true, subtree: true });
 
     openProjectionButton?.addEventListener("click", () => void openProjection());
+    openShareButton?.addEventListener("click", openShareWindow);
+    qrToggleButton.addEventListener("click", () => setQrOverlay(qrOverlay.hidden));
+    qrCloseButton.addEventListener("click", () => setQrOverlay(false));
+    qrOverlay.addEventListener("click", (event) => {
+        event.stopPropagation();
+        if (event.target === qrOverlay) {
+            setQrOverlay(false);
+        }
+    });
+    const handleQrKeyboard = (event) => {
+        if (qrOverlay.hidden) {
+            return;
+        }
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        if (event.key === "Escape") {
+            setQrOverlay(false);
+        }
+    };
+    document.addEventListener("keydown", handleQrKeyboard, { capture: true });
     window.addEventListener("presentation:slide-change", scheduleProjectionFrameRetries);
 
     projectionChannel?.addEventListener("message", (event) => {
@@ -502,8 +593,10 @@
         window.clearInterval(pollTimer);
         window.clearInterval(frameTimer);
         pageObserver.disconnect();
+        shellObserver.disconnect();
         frameRetryGeneration += 1;
         window.removeEventListener("presentation:slide-change", scheduleProjectionFrameRetries);
+        document.removeEventListener("keydown", handleQrKeyboard, { capture: true });
         projectionChannel?.close();
     }, { once: true });
 })();

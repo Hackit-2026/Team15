@@ -79,6 +79,56 @@ button:disabled {
     border: 1px solid rgba(23, 32, 51, 0.08);
     border-radius: var(--card-radius);
     background: var(--surface);
+    transition: padding 0.24s ease, gap 0.24s ease, border-radius 0.24s ease;
+}
+
+.pdf-upload-panel.is-compact {
+    grid-template-columns: minmax(180px, 1fr) minmax(300px, 0.8fr);
+    gap: 8px 20px;
+    padding: 12px 16px;
+    border-radius: 18px;
+}
+
+.pdf-upload-panel.is-compact .presentation-kicker,
+.pdf-upload-panel.is-compact > div > p:last-child,
+.pdf-upload-panel.is-compact .pdf-dropzone > span {
+    display: none;
+}
+
+.pdf-upload-panel.is-compact h1 {
+    margin: 0;
+    font-size: 1rem;
+}
+
+.pdf-upload-panel.is-compact .pdf-dropzone {
+    display: flex;
+    min-height: 46px;
+    justify-content: center;
+    gap: 12px;
+    padding: 7px 14px;
+    border-width: 1px;
+    border-radius: 999px;
+}
+
+.pdf-upload-panel.is-compact .pdf-dropzone strong {
+    flex: 0 0 auto;
+    font-size: 0.86rem;
+}
+
+.pdf-upload-panel.is-compact .pdf-dropzone small {
+    min-width: 0;
+    font-size: 0.76rem;
+}
+
+.pdf-upload-panel.is-compact .pdf-upload-status,
+.pdf-upload-panel.is-compact .presentation-error {
+    min-height: 0;
+    margin: 0;
+    line-height: 1.3;
+}
+
+.pdf-upload-panel.is-compact .presentation-error:empty {
+    display: none;
 }
 
 .presentation-kicker {
@@ -270,6 +320,7 @@ button:disabled {
 }
 
 .presentation-stage {
+    position: relative;
     display: grid;
     grid-template-rows: minmax(0, 1fr) auto;
     width: 100%;
@@ -279,6 +330,89 @@ button:disabled {
     border-radius: var(--card-radius);
     background: #090d16;
     box-shadow: 0 20px 52px rgba(16, 23, 38, 0.18);
+}
+
+.presentation-qr-overlay {
+    position: absolute;
+    z-index: 20;
+    inset: 0;
+    display: grid;
+    padding: clamp(18px, 4vw, 48px);
+    place-items: center;
+    background: rgba(5, 8, 15, 0.78);
+    backdrop-filter: blur(14px);
+}
+
+.presentation-qr-card {
+    position: relative;
+    width: min(92%, 560px);
+    padding: clamp(22px, 4vmin, 42px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: clamp(22px, 3vmin, 34px);
+    background: rgba(255, 255, 255, 0.97);
+    color: var(--ink);
+    text-align: center;
+    box-shadow: 0 28px 80px rgba(0, 0, 0, 0.48);
+}
+
+.presentation-qr-kicker {
+    margin: 0 0 5px;
+    color: var(--primary);
+    font-size: clamp(0.68rem, 1.2vmin, 0.85rem);
+    font-weight: 850;
+    letter-spacing: 0.18em;
+}
+
+.presentation-qr-card h2 {
+    margin: 0 0 clamp(14px, 2vmin, 24px);
+    font-size: clamp(1.35rem, 3.2vmin, 2.2rem);
+}
+
+.presentation-qr-image-frame {
+    display: grid;
+    width: min(48vmin, 400px);
+    aspect-ratio: 1;
+    margin: 0 auto;
+    padding: clamp(10px, 1.5vmin, 16px);
+    place-items: center;
+    border: 1px solid var(--line);
+    border-radius: clamp(16px, 2vmin, 24px);
+    background: white;
+}
+
+.presentation-qr-image-frame img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.presentation-qr-image-frame p {
+    color: var(--muted);
+    font-size: 0.86rem;
+}
+
+.presentation-qr-url {
+    margin: clamp(12px, 2vmin, 20px) 0 0;
+    overflow-wrap: anywhere;
+    color: var(--muted);
+    font-size: clamp(0.72rem, 1.4vmin, 0.9rem);
+}
+
+.presentation-qr-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    display: grid;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    place-items: center;
+    background: #eef1f6;
+    color: var(--ink);
+    font-size: 1.35rem;
 }
 
 .slide-viewport {
@@ -556,6 +690,16 @@ button:disabled {
     color: #dbe4ff;
 }
 
+.presentation-controls .presentation-share {
+    border-color: rgba(104, 211, 173, 0.7);
+    background: rgba(29, 145, 105, 0.18);
+    color: #c9f7e6;
+}
+
+.presentation-controls .presentation-share:hover:not(:disabled) {
+    background: rgba(29, 145, 105, 0.36);
+}
+
 .presentation-controls .presentation-project:hover:not(:disabled) {
     background: rgba(52, 87, 213, 0.38);
 }
@@ -629,6 +773,17 @@ button:disabled {
         gap: 20px;
         padding: 22px;
         border-radius: 22px;
+    }
+
+    .pdf-upload-panel.is-compact {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 8px;
+        padding: 12px;
+        border-radius: 16px;
+    }
+
+    .pdf-upload-panel.is-compact .pdf-dropzone {
+        width: 100%;
     }
 
     .presentation-stage {

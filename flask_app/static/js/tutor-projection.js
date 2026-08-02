@@ -3,10 +3,18 @@
     const roomId = params.get("roomId");
     const stage = document.getElementById("projectionStage");
     const slide = document.getElementById("projectionSlide");
+    const projectionCanvas = document.getElementById("projectionCanvas");
     const guide = document.getElementById("projectionGuide");
     const status = document.getElementById("projectionStatus");
     const fullscreenButton = document.getElementById("projectionFullscreen");
     const exitButton = document.getElementById("projectionExit");
+    const shareToggleButton = document.getElementById("projectionShareToggle");
+    const sharePanel = document.getElementById("projectionSharePanel");
+    const shareQr = document.getElementById("projectionShareQr");
+    const shareQrStatus = document.getElementById("projectionShareQrStatus");
+    const shareUrl = document.getElementById("projectionShareUrl");
+    const shareCopyButton = document.getElementById("projectionShareCopy");
+    const shareMessage = document.getElementById("projectionShareMessage");
     const pageIndicator = document.getElementById("projectionPage");
     const reactionMeter = document.getElementById("projectionReactionMeter");
     const emojis = document.getElementById("projectionEmojis");
@@ -29,6 +37,47 @@
     let crackEnabled = false;
     let destroyed = false;
     let touchStartX = null;
+    const participantUrl = `${window.location.origin}/room/${encodeURIComponent(roomId || "")}`;
+
+    function setSharePanel(open) {
+        stage.classList.toggle("has-share-panel", open);
+        sharePanel.setAttribute("aria-hidden", String(!open));
+        shareToggleButton.setAttribute("aria-expanded", String(open));
+        shareToggleButton.setAttribute(
+            "aria-label",
+            open ? "参加用QRコードを閉じる" : "参加用QRコードを表示",
+        );
+        shareToggleButton.title = open ? "QRコードとURLを閉じる (Q)" : "QRコードとURLを表示 (Q)";
+
+        if (open && !shareQr.getAttribute("src")) {
+            shareQrStatus.hidden = false;
+            shareQr.hidden = true;
+            shareQr.src = `/api/qrcreate/${encodeURIComponent(roomId)}`;
+        }
+    }
+
+    shareUrl.textContent = participantUrl;
+    shareQr.addEventListener("load", () => {
+        shareQr.hidden = false;
+        shareQrStatus.hidden = true;
+    });
+    shareQr.addEventListener("error", () => {
+        shareQr.hidden = true;
+        shareQrStatus.hidden = false;
+        shareQrStatus.textContent = "QRコードを表示できませんでした";
+    });
+    shareToggleButton.addEventListener("click", () => {
+        setSharePanel(!stage.classList.contains("has-share-panel"));
+    });
+    shareCopyButton.addEventListener("click", async () => {
+        try {
+            await navigator.clipboard.writeText(participantUrl);
+            shareMessage.textContent = "参加者用URLをコピーしました";
+        } catch {
+            shareMessage.textContent = "URLを選択してコピーしてください";
+            window.getSelection()?.selectAllChildren(shareUrl);
+        }
+    });
 
     function updateReactionState() {
         reactionMeter.textContent = destructionEnabled
@@ -74,7 +123,10 @@
         }
         destroyed = true;
         if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-            slide.animate([{ opacity: 1 }, { opacity: 0.2 }, { opacity: 1 }], { duration: 450 });
+            const visibleSlide = stage.classList.contains("has-hires-slide")
+                ? projectionCanvas
+                : slide;
+            visibleSlide.animate([{ opacity: 1 }, { opacity: 0.2 }, { opacity: 1 }], { duration: 450 });
             return;
         }
 
@@ -224,12 +276,19 @@
 
     exitButton.addEventListener("click", () => window.close());
     stage.addEventListener("click", (event) => {
-        if (event.target instanceof Element && event.target.closest("button")) {
+        if (
+            event.target instanceof Element
+            && event.target.closest("button, .projection-share-panel")
+        ) {
             return;
         }
         navigate(event.clientX < window.innerWidth / 2 ? "previous" : "next");
     });
     stage.addEventListener("touchstart", (event) => {
+        if (event.target instanceof Element && event.target.closest(".projection-share-panel")) {
+            touchStartX = null;
+            return;
+        }
         touchStartX = event.changedTouches[0]?.clientX ?? null;
     }, { passive: true });
     stage.addEventListener("touchend", (event) => {
@@ -249,6 +308,8 @@
             navigate("previous");
         } else if (event.key.toLowerCase() === "f") {
             void toggleProjectionFullscreen();
+        } else if (event.key.toLowerCase() === "q") {
+            setSharePanel(!stage.classList.contains("has-share-panel"));
         }
     });
 

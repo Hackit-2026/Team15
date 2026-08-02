@@ -5,10 +5,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="PDFプレゼンテーション画面">
-    <link rel="stylesheet" href="{{ url_for('static', filename='tutor/presentation.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='tutor/presentation.css', v='20260802-2') }}">
     <script src="{{ url_for('static', filename='js/local-effect-settings-adapter.js', v='20260802-1') }}"></script>
     <script type="module" src="{{ url_for('static', filename='dist/presentation.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/presentation-reactions.js', v='20260802-5') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/presentation-reactions.js', v='20260802-9') }}" defer></script>
 </head>
 <body data-room-id="{{ room_id }}">
     <header class="presentation-header">
@@ -80,11 +80,42 @@
                     <div class="reaction-meter" id="reactionMeter" aria-live="polite">🤔 0 / 5人</div>
                 </div>
 
+                <section
+                    class="presentation-qr-overlay"
+                    id="presentationQrOverlay"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="presentationQrTitle"
+                    hidden
+                >
+                    <div class="presentation-qr-card">
+                        <button
+                            class="presentation-qr-close"
+                            id="closePresentationQr"
+                            type="button"
+                            aria-label="QRコードを閉じる"
+                        >×</button>
+                        <p class="presentation-qr-kicker">JOIN THIS ROOM</p>
+                        <h2 id="presentationQrTitle">スマートフォンで参加</h2>
+                        <div class="presentation-qr-image-frame">
+                            <img id="presentationQrImage" alt="参加者用URLのQRコード" hidden>
+                            <p id="presentationQrStatus">QRコードを読み込んでいます...</p>
+                        </div>
+                        <p class="presentation-qr-url" id="presentationQrUrl"></p>
+                    </div>
+                </section>
+
                 <div class="presentation-controls" aria-label="プレゼンテーション操作">
                     <button id="previousSlide" type="button">← 前へ</button>
                     <p><strong id="currentPage">1</strong> / <span id="totalPages">0</span></p>
                     <button id="nextSlide" type="button">次へ →</button>
                     <button id="toggleFullscreen" type="button">全画面</button>
+                    <button id="togglePresentationQr" type="button" aria-expanded="false">QR表示</button>
+                    <button
+                        class="presentation-share"
+                        id="openPresentationShare"
+                        type="button"
+                    >参加者に共有</button>
                     <button
                         class="presentation-project"
                         id="openProjection"
