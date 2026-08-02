@@ -18,7 +18,7 @@ async function loadShareRoom() {
             return;
         }
 
-        const response = await fetch(`/api/room_setting/${roomId}`);
+        const response = await fetch(`/api/room/${roomId}`);
         const data = await response.json();
 
         if (!response.ok) {

@@ -13,7 +13,7 @@
         <a class="product-name" href="{{ url_for('tutor.tutor_main') }}">{{ app_name }}</a>
         <nav class="navigation" aria-label="メインナビゲーション">
             <a class="is-current" href="{{ url_for('tutor.tutor_main') }}">ホーム</a>
-            <a href="#recentRoomsSection">授業一覧</a>
+            <a href="#lectureRoomsSection">講義一覧</a>
             <details class="account-menu">
                 <summary>
                     <span id="headerTutorUsername">講師</span>さん
@@ -64,26 +64,26 @@
             <div>
                 <p class="section-kicker">TUTOR DASHBOARD</p>
                 <h1>こんにちは、<span id="dashboardTutorUsername">講師</span>さん</h1>
-                <p>開講中の授業と、これまでの反応を確認できます。</p>
+                <p>担当している講義と、これまでの反応を確認できます。</p>
             </div>
         </section>
 
         <p class="dashboard-message" id="dashboardMessage" role="status" aria-live="polite"></p>
 
-        <section class="dashboard-section priority-section" aria-labelledby="activeRoomsTitle">
+        <section class="dashboard-section" id="lectureRoomsSection" aria-labelledby="lectureRoomsTitle">
             <div class="section-heading">
                 <div>
-                    <p class="section-kicker">LIVE</p>
-                    <h2 id="activeRoomsTitle">開講中の講義</h2>
+                    <p class="section-kicker">LECTURES</p>
+                    <h2 id="lectureRoomsTitle">講義一覧</h2>
                 </div>
             </div>
 
             <div class="loading-state" id="dashboardLoading">講義情報を読み込んでいます...</div>
-            <div class="active-room-list" id="activeRoomList" hidden></div>
+            <div class="active-room-list" id="lectureRoomList" hidden></div>
 
-            <div class="empty-state" id="noActiveRoom" hidden>
+            <div class="empty-state" id="noLectureRoom" hidden>
                 <div class="empty-state__icon" aria-hidden="true">＋</div>
-                <h3>現在、開講中の講義はありません</h3>
+                <h3>担当している講義はまだありません</h3>
                 <p>上の入力欄から新しいルームを作成し、授業を始めましょう。</p>
             </div>
 
@@ -121,30 +121,6 @@
             </div>
         </section>
 
-        <section class="dashboard-section" id="recentRoomsSection" aria-labelledby="recentRoomsTitle">
-            <div class="section-heading">
-                <div>
-                    <p class="section-kicker">HISTORY</p>
-                    <h2 id="recentRoomsTitle">最近の授業</h2>
-                </div>
-            </div>
-
-            <div class="table-wrap" id="recentRoomTable" hidden>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>授業名</th>
-                            <th>ステータス</th>
-                            <th>リアクション</th>
-                            <th>実施日</th>
-                            <th><span class="visually-hidden">操作</span></th>
-                        </tr>
-                    </thead>
-                    <tbody id="recentRoomList"></tbody>
-                </table>
-            </div>
-            <p class="list-empty" id="recentRoomEmpty" hidden>まだ完了した授業はありません。</p>
-        </section>
     </main>
 
     <div class="mobile-room-creator-layer" id="mobileRoomCreatorLayer" aria-hidden="true">
@@ -181,7 +157,7 @@
         aria-controls="mobileRoomCreatorLayer"
     ><span class="mobile-create-fab__icon" aria-hidden="true"></span></button>
 
-    <template id="activeRoomTemplate">
+    <template id="lectureRoomTemplate">
         <article class="active-room-card">
             <div class="active-room-card__main">
                 <div>
@@ -201,14 +177,5 @@
         </article>
     </template>
 
-    <template id="recentRoomRowTemplate">
-        <tr>
-            <td class="js-room-name"></td>
-            <td><span class="table-status js-room-status"></span></td>
-            <td><span class="js-reaction-count">0</span>件</td>
-            <td class="js-created-at">—</td>
-            <td><a class="table-link js-manage-room" href="#">詳細</a></td>
-        </tr>
-    </template>
 </body>
 </html>
