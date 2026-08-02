@@ -47,8 +47,6 @@
   .btn:disabled { background: #bbb !important; }
 
   .btn-wakaran { background: #e05555; }
-  .btn-again   { background: #e0a355; }
-  .btn-fast    { background: #5580e0; }
 
   /* --- 入口・ログインまわりのボタン --- */
   .btn-login    { background: #333; }
@@ -289,9 +287,7 @@
   <!-- 「押す」タブ：授業中はこれだけ見えていればいい -->
   <div id="tabPress">
     <div class="card">
-      <button class="btn btn-wakaran" id="btn-wakaran" onclick="press('wakaran')">分からん</button>
-      <button class="btn btn-again"   id="btn-again"   onclick="press('again')">もう一回</button>
-      <button class="btn btn-fast"    id="btn-fast"    onclick="press('fast')">速い</button>
+      <button class="btn btn-wakaran" id="btn-wakaran" onclick="press()">分からん</button>
 
       <p class="note" style="text-align:center" id="pressNote"></p>
       <div id="error"></div>
@@ -486,7 +482,8 @@ function renderLoginStatus() {
 // ============================================
 // ボタンを押したとき
 // ============================================
-async function press(type) {
+async function press() {
+  const type = PRESS_TYPES.WAKARAN;
   const btn = document.getElementById("btn-" + type);
 
   // すぐ反応を返す（体感速度が大事）
@@ -496,7 +493,8 @@ async function press(type) {
 
   try {
     // 誰が押したかはサーバーがセッションで判別する。
-    // type は現状サーバーが捨てるが、保存対応が入り次第そのまま効き始める。
+    // type はサーバーが捨てているが、講義側が種類別の集計を求めているので
+    // 送るだけ送っておく（保存対応が入ればそのまま効き始める）。
     const res = await apiPostForm("/api/reaction/" + sid, { type: type });
     clearError();
 
