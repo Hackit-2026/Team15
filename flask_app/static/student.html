@@ -703,6 +703,11 @@ async function press() {
 
     if (!currentUser) return;   // 匿名のときは手元に何も残さない
 
+    // 学生が入ったあとに先生がスライドを上げると、開いた時点では
+    // 総ページ数が取れていない。ページが返ってきたのに分母が無いときは
+    // ここで取り直す（無いままだと進捗バーの印が中央に集まる）。
+    if (res.page != null && !totalPages) await loadTotalPages();
+
     // page があればそれを使う。スライド未登録の講義では null が返るので、
     // その場合だけ従来どおり経過時間で並べる。
     const p = {
@@ -726,8 +731,12 @@ async function loadTotalPages() {
   try {
     const st = await apiGet("/api/room/" + sid + "/presentation/state");
     totalPages = st.totalPages != null ? st.totalPages : null;
+    saveTotalPagesLocal(sid, totalPages);
   } catch (e) {
-    totalPages = null;
+    // 先生が講義を終了すると410、スライドが消されると404で、どちらもここに来る。
+    // 復習リストを見るのは講義のあとなので、控えがあればそれを使う。
+    // 無ければ null のまま（スライドを使わない講義。時間表示に落ちる）。
+    totalPages = loadTotalPagesLocal(sid);
   }
 }
 

@@ -140,9 +140,10 @@ async function apiPostForm(path, obj) {
 // --------------------------------------------
 // 経過時間（暫定：この端末の時計で計算）
 // --------------------------------------------
-// 本来はサーバーが計算して返すべき値（設計判断どおり）。
-// ただ今のバックエンドは押した時刻をそもそも保存していないため、
-// サーバーが elapsed_sec を返すようになるまでの暫定として、
+// スライドを使う講義では、押した位置はサーバーが返す page で表せるので
+// ここは使わない。使うのはスライドを使わない講義のときだけ。
+// サーバーは押した時刻（reactions.timestamp）を保存しているが、
+// 経過秒として返すAPIは無いため、暫定として
 // 「この端末でこの部屋を最初に開いた時刻」からの経過を使う。
 // 講義の途中で開いた人は 0分 から始まるズレがあるが、
 // 自分用の復習リストの並び・位置には十分。
@@ -198,6 +199,38 @@ function saveMyPressLocal(sid, clientId, press) {
     localStorage.setItem(myPressesKey(sid, clientId), JSON.stringify(list));
   } catch (e) {
     // 保存できない環境では画面に出ている分だけで我慢する
+  }
+}
+
+
+// --------------------------------------------
+// スライドの総ページ数（ブラウザ保存）
+// --------------------------------------------
+// 進捗バーの分母に使う値。
+// 講義が終わると /presentation/state は410を返して取れなくなる
+// （スライドが消された場合は404）。ところが復習リストを見るのは
+// まさに講義が終わったあとなので、そのままだと分母を失って
+// 記録の印が全部バーの中央に重なってしまう。
+// 一度取れた値を控えておき、取れなくなったらそれを使う。
+
+function totalPagesKey(sid) {
+  return "total_pages:" + sid;
+}
+
+function loadTotalPagesLocal(sid) {
+  try {
+    const v = Number(localStorage.getItem(totalPagesKey(sid)));
+    return v > 0 ? v : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function saveTotalPagesLocal(sid, n) {
+  try {
+    if (n > 0) localStorage.setItem(totalPagesKey(sid), String(n));
+  } catch (e) {
+    // 保存できない環境では、講義が終わるまでの間だけ正しく出る
   }
 }
 
@@ -260,9 +293,11 @@ function mockGet(path) {
 
   // GET /api/reaction/<room_id>?user_id=xxx → 自分の押した分
   // （ブラウザに残した控えをそのまま返す）
+  // page も必ず含めること。落とすとリロードした時にページ表示が
+  // 時間表示に化けて、本物より悪い挙動になる。
   if (parts[1] === "reaction") {
     return loadMyPressesLocal(parts[2], "user:" + params.get("user_id"))
-      .map(p => ({ id: p.id, type: p.type, elapsed_sec: p.elapsed_sec }));
+      .map(p => ({ id: p.id, type: p.type, page: p.page, elapsed_sec: p.elapsed_sec }));
   }
 
   throw new Error("仮データに無いURL: " + path);
