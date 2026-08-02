@@ -1,0 +1,319 @@
+.rooms-page {
+    padding-top: 42px;
+}
+
+.rooms-heading {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+.rooms-heading h1 {
+    margin: 6px 0 10px;
+    font-size: clamp(1.8rem, 4vw, 2.7rem);
+    letter-spacing: -0.035em;
+}
+
+.rooms-heading > div > p:last-child {
+    max-width: 680px;
+    margin: 0;
+    color: var(--muted);
+    line-height: 1.75;
+}
+
+.rooms-message {
+    min-height: 1.3em;
+    margin: 0 0 14px;
+    color: var(--danger);
+    font-size: 0.86rem;
+}
+
+.analytics-summary {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(230px, 1.35fr);
+    gap: 14px;
+    margin-bottom: 28px;
+}
+
+.analytics-summary-card {
+    min-height: 135px;
+    padding: 20px;
+    border: 1px solid var(--line);
+    border-radius: 24px;
+    background: var(--surface);
+    box-shadow: 0 10px 25px rgba(16, 23, 38, 0.05);
+}
+
+.analytics-summary-card > span {
+    color: var(--muted);
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.analytics-summary-card p {
+    margin: 16px 0 0;
+}
+
+.analytics-summary-card strong {
+    margin-right: 3px;
+    font-size: clamp(2rem, 4vw, 2.8rem);
+    line-height: 1;
+}
+
+.analytics-summary-card--highlight {
+    border-color: rgba(52, 87, 213, 0.18);
+    background: linear-gradient(140deg, #eef2ff, #ffffff 72%);
+}
+
+.analytics-summary-card .most-confusing-name {
+    overflow: hidden;
+    margin-top: 12px;
+    font-size: 1.05rem;
+    font-weight: 800;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.analytics-summary-card small {
+    color: var(--primary);
+    font-weight: 750;
+}
+
+.rooms-list-section {
+    padding: 26px;
+    border: 1px solid var(--line);
+    border-radius: 28px;
+    background: var(--surface);
+}
+
+.rooms-list-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 22px;
+}
+
+.rooms-list-heading h2 {
+    margin: 4px 0 0;
+    font-size: 1.45rem;
+}
+
+.room-filters {
+    display: flex;
+    gap: 6px;
+    padding: 4px;
+    border-radius: 999px;
+    background: var(--canvas);
+}
+
+.room-filters button {
+    min-height: 34px;
+    padding: 6px 13px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--muted);
+    font-size: 0.8rem;
+    font-weight: 750;
+}
+
+.room-filters button.is-active {
+    background: var(--surface);
+    color: var(--primary);
+    box-shadow: 0 2px 8px rgba(16, 23, 38, 0.09);
+}
+
+.analytics-room-list {
+    display: grid;
+    gap: 12px;
+}
+
+.analytics-room-card {
+    display: grid;
+    grid-template-columns: minmax(180px, 1fr) minmax(210px, 0.8fr) auto;
+    align-items: center;
+    gap: 24px;
+    padding: 18px 20px;
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.analytics-room-card:hover {
+    border-color: rgba(52, 87, 213, 0.35);
+    box-shadow: 0 12px 24px rgba(16, 23, 38, 0.07);
+    transform: translateY(-2px);
+}
+
+.analytics-room-card[hidden] {
+    display: none;
+}
+
+.analytics-room-card__title {
+    min-width: 0;
+}
+
+.analytics-room-card__title h3 {
+    overflow: hidden;
+    margin: 7px 0 0;
+    font-size: 1.05rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.room-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #23815c;
+    font-size: 0.72rem;
+    font-weight: 800;
+}
+
+.room-status::before {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #2db77c;
+    content: "";
+}
+
+.room-status.is-finished {
+    color: var(--muted);
+}
+
+.room-status.is-finished::before {
+    background: #a8b0be;
+}
+
+.reaction-stat {
+    min-width: 0;
+}
+
+.reaction-stat__number {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.reaction-stat__number span {
+    color: var(--muted);
+    font-size: 0.76rem;
+    font-weight: 700;
+}
+
+.reaction-stat__number strong {
+    font-size: 1.45rem;
+}
+
+.reaction-bar {
+    height: 7px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: #e9edf5;
+}
+
+.reaction-bar span {
+    display: block;
+    width: var(--reaction-width, 0%);
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #6e87e9, var(--primary));
+}
+
+.analytics-room-card__link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    padding: 8px 16px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--primary);
+    font-size: 0.82rem;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.analytics-room-card__link:hover {
+    border-color: var(--primary);
+    background: #eef2ff;
+}
+
+.rooms-loading,
+.rooms-empty {
+    padding: 46px 20px;
+    color: var(--muted);
+    text-align: center;
+}
+
+.rooms-empty strong {
+    display: block;
+    margin-bottom: 5px;
+    color: var(--ink);
+}
+
+.rooms-empty p {
+    margin: 0;
+}
+
+@media (max-width: 960px) {
+    .analytics-summary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .analytics-room-card {
+        grid-template-columns: minmax(170px, 1fr) minmax(180px, 1fr);
+    }
+
+    .analytics-room-card__link {
+        grid-column: 1 / -1;
+        justify-self: end;
+    }
+}
+
+@media (max-width: 640px) {
+    .rooms-page {
+        padding-top: 28px;
+    }
+
+    .analytics-summary {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .analytics-summary-card {
+        min-height: 112px;
+    }
+
+    .rooms-list-section {
+        padding: 20px 16px;
+        border-radius: 22px;
+    }
+
+    .rooms-list-heading {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .room-filters {
+        width: 100%;
+    }
+
+    .room-filters button {
+        flex: 1;
+    }
+
+    .analytics-room-card {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 16px;
+    }
+
+    .analytics-room-card__link {
+        grid-column: 1;
+        justify-self: stretch;
+    }
+}

@@ -142,6 +142,25 @@ def send_reaction(id):
   return jsonify(room_to_dict(room)), 201
 
 
+@main.route("/reactions/room/<int:room_id>", methods=["GET"])
+def get_room_reactions(room_id):
+  room = Room.get_by_id(room_id)
+  if room is None:
+    return jsonify({"error": "部屋が見つかりません"}), 404
+
+  reactions = Reaction.get_all_by_room_id(room_id)
+  logged_in_user_count = len({
+    reaction.user_id
+    for reaction in reactions
+    if reaction.user_id is not None
+  })
+  return jsonify({
+    "roomId": room.id,
+    "reactionCount": len(reactions),
+    "loggedInUserCount": logged_in_user_count,
+  })
+
+
 @main.route("/qrcreate/<id>", methods=["GET"])
 def qr(id):
   url = "http://127.0.0.1:5000/room/" + id

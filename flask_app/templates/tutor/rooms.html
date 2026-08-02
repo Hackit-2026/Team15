@@ -1,162 +1,84 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+    <title>{{ app_name }} - {{ title }}</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>シラバス / 授業科目一覧</title>
-    <style>
-        :root {
-            --primary: #2563eb;
-            --primary-hover: #1d4ed8;
-            --bg-color: #f8fafc;
-            --text-main: #1e293b;
-            --card-bg: #ffffff;
-        }
-
-        body {
-            font-family: 'Helvetica Neue', 'Arial', 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            margin: 0;
-            padding: 0;
-            line-height: 1.6;
-        }
-
-        header {
-            background: linear-gradient(135deg, #1e40af, #3b82f6);
-            color: white;
-            padding: 3rem 2rem;
-            text-align: center;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
-
-        header h1 {
-            margin: 0;
-            font-size: 2.2rem;
-            font-weight: 700;
-            letter-spacing: 0.05em;
-        }
-
-        header p {
-            margin: 0.5rem 0 0;
-            font-size: 1.1rem;
-            opacity: 0.9;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: -2rem auto 3rem;
-            padding: 0 1rem;
-            position: relative;
-            z-index: 10;
-        }
-
-        .search-bar {
-            background: var(--card-bg);
-            padding: 1.5rem;
-            border-radius: 12px;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-            margin-bottom: 2.5rem;
-            display: flex;
-            gap: 1rem;
-        }
-
-        .search-bar input {
-            flex: 1;
-            padding: 0.75rem 1rem;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            font-size: 1rem;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-
-        .search-bar input:focus {
-            border-color: var(--primary);
-        }
-
-        .search-bar button {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 0 1.5rem;
-            border-radius: 8px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .search-bar button:hover {
-            background: var(--primary-hover);
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 1.5rem;
-        }
-
-        .card {
-            background: var(--card-bg);
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            display: flex;
-            flex-direction: column;
-            border: 1px solid #f1f5f9;
-        }
-
-        .card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-        }
-
-        .card h2 {
-            margin: 0 0 1.5rem;
-            font-size: 1.25rem;
-            color: var(--text-main);
-            line-height: 1.4;
-            flex-grow: 1;
-        }
-
-        .card-footer {
-            border-top: 1px solid #e2e8f0;
-            padding-top: 1rem;
-            display: flex;
-            justify-content: flex-end;
-        }
-
-        .syllabus-link {
-            color: var(--primary);
-            text-decoration: none;
-            font-size: 0.9rem;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
-        }
-
-        .syllabus-link:hover {
-            text-decoration: underline;
-        }
-
-        .syllabus-link::after {
-            content: "→";
-        }
-    </style>
+    <meta name="description" content="担当講義のわからん統計">
+    <link rel="stylesheet" href="{{ url_for('static', filename='tutor/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='tutor/rooms.css') }}">
+    <script src="{{ url_for('static', filename='js/rooms.js') }}" defer></script>
 </head>
 <body>
-
-    <header>
-        <h1 id="roomsTitle">○○さんの科目一覧</h1>
+    <header class="site-header">
+        <a class="product-name" href="{{ url_for('tutor.tutor_main') }}">{{ app_name }}</a>
+        <nav class="navigation" aria-label="メインナビゲーション">
+            <a href="{{ url_for('tutor.tutor_main') }}">ホーム</a>
+            <a class="is-current" href="{{ url_for('tutor.tutor_rooms') }}">講義一覧</a>
+            <details class="account-menu">
+                <summary>
+                    <span id="tutorUsername">講師</span>さん
+                    <span class="account-menu__chevron" aria-hidden="true"></span>
+                </summary>
+                <div class="account-menu__panel">
+                    <a href="{{ url_for('pages.mypage') }}">マイページ</a>
+                    <button id="logoutLink" type="button">ログアウト</button>
+                </div>
+            </details>
+        </nav>
     </header>
 
-    <div class="container">
-        <p id="roomsMessage">科目一覧を読み込んでいます...</p>
+    <main class="content rooms-page">
+        <section class="rooms-heading">
+            <div>
+                <p class="section-kicker">LECTURE ANALYTICS</p>
+                <h1>講義別の「わからん」統計</h1>
+                <p>担当している講義の反応数を比較し、理解が難しかった授業を確認できます。</p>
+            </div>
+        </section>
 
-        <div class="grid" id="roomsGrid"></div>
-    </div>
-    <script src="{{ url_for('static', filename='js/rooms.js') }}" defer></script>
+        <p class="rooms-message" id="roomsMessage" role="status" aria-live="polite"></p>
+
+        <section class="analytics-summary" aria-label="講義統計の概要">
+            <article class="analytics-summary-card">
+                <span>担当講義</span>
+                <p><strong id="totalRoomCount">—</strong>件</p>
+            </article>
+            <article class="analytics-summary-card">
+                <span>わからん総数</span>
+                <p><strong id="totalReactionCount">—</strong>件</p>
+            </article>
+            <article class="analytics-summary-card">
+                <span>1講義あたり</span>
+                <p><strong id="averageReactionCount">—</strong>件</p>
+            </article>
+            <article class="analytics-summary-card analytics-summary-card--highlight">
+                <span>最も反応が多い講義</span>
+                <p class="most-confusing-name" id="mostConfusingRoomName">—</p>
+                <small id="mostConfusingRoomCount">0件の反応</small>
+            </article>
+        </section>
+
+        <section class="rooms-list-section" aria-labelledby="roomsListTitle">
+            <div class="rooms-list-heading">
+                <div>
+                    <p class="section-kicker">LECTURES</p>
+                    <h2 id="roomsListTitle">担当講義</h2>
+                </div>
+                <div class="room-filters" aria-label="講義の絞り込み">
+                    <button class="is-active" type="button" data-filter="all">すべて</button>
+                    <button type="button" data-filter="active">開講中</button>
+                    <button type="button" data-filter="finished">終了</button>
+                </div>
+            </div>
+
+            <div class="rooms-loading" id="roomsLoading">講義と反応数を読み込んでいます...</div>
+            <div class="analytics-room-list" id="roomsGrid" hidden></div>
+            <div class="rooms-empty" id="roomsEmpty" hidden>
+                <strong>表示できる講義がありません</strong>
+                <p>ホームからルームを作成すると、ここに統計が表示されます。</p>
+            </div>
+        </section>
+    </main>
 </body>
 </html>
