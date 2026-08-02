@@ -168,7 +168,16 @@ def get_room_result(room_id):
 
   reactions = Reaction.get_all_by_room_id(room_id)
   page_counts = Counter(reaction.page for reaction in reactions if reaction.page is not None)
-  return jsonify({str(page): count for page, count in sorted(page_counts.items())})
+  return jsonify({
+    "room_id": room.id,
+    "room_name": room.name,
+    "reaction_count": len(reactions),
+    "page_counts": {str(page): count for page, count in sorted(page_counts.items())},
+    "reactions": [
+      {"id": reaction.id, "user_id": reaction.user_id, "page": reaction.page}
+      for reaction in reactions
+    ],
+  })
 
 @main.route("/qrcreate/<id>", methods=["GET"])
 def qr(id):

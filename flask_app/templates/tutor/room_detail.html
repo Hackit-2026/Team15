@@ -194,7 +194,7 @@ html_content = """<!DOCTYPE html>
         }
     </style>
 </head>
-<body>
+<body data-room-id="{{ room_id }}">
 
     <header>
         <h1>ネットワーク工学特論 - 授業詳細</h1>
@@ -242,22 +242,52 @@ html_content = """<!DOCTYPE html>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const reactionResults = document.getElementById('reactionResults');
+            const roomIdFromBody = Number(document.body.dataset.roomId);
+            const roomIdFromPath = (() => {
+                const match = window.location.pathname.match(/\/tutor\/room\/(\d+)(?:\/|$)/);
+                return match ? Number(match[1]) : null;
+            })();
+            const roomId = Number.isInteger(roomIdFromBody) && roomIdFromBody > 0
+                ? roomIdFromBody
+                : Number.isInteger(roomIdFromPath) && roomIdFromPath > 0
+                    ? roomIdFromPath
+                    : null;
+
+            if (!roomId) {
+                reactionResults.textContent = 'room_id が設定されていません。';
+                return;
+            }
 
             async function loadReactionResults() {
                 try {
-                    const response = await fetch('/api/reactions/user/1');
-                    const data = await response.json();
+                    const response = await fetch(`/api/room/${encodeURIComponent(roomId)}/result`);
+                    let data;
+                    try {
+                        data = await response.json();
+                    } catch (jsonError) {
+                        const text = await response.text();
+                        throw new Error(`API 応答がJSONではありません: ${text}`);
+                    }
                     if (!response.ok) {
                         throw new Error(data.error || '収集結果の取得に失敗しました');
                     }
-                    if (!Array.isArray(data) || data.length === 0) {
+                    if (!data.page_counts || Object.keys(data.page_counts).length === 0) {
                         reactionResults.textContent = '収集結果がありません。';
                         return;
                     }
                     reactionResults.innerHTML = `
+                        <p>ルーム: ${data.room_name} (ID: ${data.room_id})</p>
+                        <p>反応数: ${data.reaction_count}</p>
+                        <h3>ページ別集計</h3>
                         <ul>
-                            ${data.map(reaction => `
-                                <li>反応ID: ${reaction.id}, ルーム: ${reaction.room_name || reaction.room_id}, ユーザーID: ${reaction.user_id}</li>
+                            ${Object.entries(data.page_counts).map(([page, count]) => `
+                                <li>ページ ${page}: ${count} 回</li>
+                            `).join('')}
+                        </ul>
+                        <h3>詳細反応</h3>
+                        <ul>
+                            ${data.reactions.map(reaction => `
+                                <li>反応ID: ${reaction.id}, ユーザーID: ${reaction.user_id}, ページ: ${reaction.page}</li>
                             `).join('')}
                         </ul>
                     `;
