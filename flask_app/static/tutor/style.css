@@ -420,6 +420,11 @@ header nav a:hover {
     background: linear-gradient(135deg, #f7fffa, #ffffff 62%);
 }
 
+.active-room-card.is-finished {
+    border-color: var(--line);
+    background: #fafbfc;
+}
+
 .active-room-card__main {
     align-items: center;
 }
@@ -469,6 +474,7 @@ header nav a:hover {
 }
 
 .table-status.is-finished,
+.status-badge.is-finished,
 .room-status.is-finished {
     background: #edf0f4;
     color: var(--muted);

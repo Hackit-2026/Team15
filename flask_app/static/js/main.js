@@ -191,17 +191,79 @@ async function loadTutor() {
 
         headerTutorUsername.textContent = data.user.username;
         dashboardTutorUsername.textContent = data.user.username;
-        return true;
+        return data.user;
     } catch {
         dashboardMessage.textContent = "ログイン情報を確認できませんでした";
         return false;
     }
 }
 
-async function loadDashboard() {
+async function loadDashboard(userId) {
     dashboardMessage.textContent = "";
     retryDashboardButton.hidden = true;
-    showDashboardState("error", "講義一覧APIは現在準備中です。ルーム作成は利用できます。");
+    showDashboardState("loading");
+
+    try {
+        const roomsResponse = await fetch(`/api/rooms?user_id=${encodeURIComponent(userId)}`);
+        if (roomsResponse.status === 401) {
+            window.location.href = "/tutor/login";
+            return;
+        }
+
+        const rooms = await roomsResponse.json();
+        if (!roomsResponse.ok) {
+            throw new Error(rooms.error ?? "講義一覧を取得できませんでした");
+        }
+        if (!Array.isArray(rooms)) {
+            throw new Error("講義一覧の形式が正しくありません");
+        }
+
+        const roomsWithReactions = await Promise.all(
+            rooms.map(async (room) => {
+                try {
+                    const reactionResponse = await fetch(`/api/reactions/room/${room.id}`);
+                    const reactionData = await reactionResponse.json();
+                    return {
+                        ...room,
+                        reaction_count: reactionResponse.ok ? reactionData.reactionCount ?? 0 : 0,
+                    };
+                } catch {
+                    return { ...room, reaction_count: 0 };
+                }
+            }),
+        );
+
+        const sortedRooms = roomsWithReactions.sort((a, b) => Number(b.id) - Number(a.id));
+        const activeRooms = sortedRooms.filter((room) => !room.isFinished);
+        const totalReactionCountValue = sortedRooms.reduce(
+            (total, room) => total + (room.reaction_count ?? 0),
+            0,
+        );
+        const mostConfusingRoom = sortedRooms.reduce(
+            (current, room) => (
+                !current || room.reaction_count > current.reaction_count ? room : current
+            ),
+            null,
+        );
+
+        renderDashboard({
+            active_rooms: activeRooms,
+            recent_rooms: sortedRooms.slice(0, 10),
+            summary: {
+                active_room_count: activeRooms.length,
+                total_room_count: sortedRooms.length,
+                total_reaction_count: totalReactionCountValue,
+                most_confusing_room:
+                    mostConfusingRoom?.reaction_count > 0 ? mostConfusingRoom : null,
+            },
+        });
+    } catch (error) {
+        retryDashboardButton.hidden = false;
+        showDashboardState(
+            "error",
+            error.message || "講義一覧を取得できませんでした。",
+        );
+    }
 }
 
 headerCreateButton.addEventListener("click", () => {
@@ -283,7 +345,13 @@ mobileViewport.addEventListener("change", () => {
     setMobileRoomCreatorOpen(false, false);
 });
 
-retryDashboardButton.addEventListener("click", loadDashboard);
+let currentTutorId = null;
+
+retryDashboardButton.addEventListener("click", () => {
+    if (currentTutorId !== null) {
+        loadDashboard(currentTutorId);
+    }
+});
 
 logoutLink.addEventListener("click", async (event) => {
     event.preventDefault();
@@ -291,9 +359,10 @@ logoutLink.addEventListener("click", async (event) => {
     window.location.href = "/tutor/login";
 });
 
-loadTutor().then((isLoggedIn) => {
-    if (isLoggedIn) {
-        loadDashboard();
+loadTutor().then((user) => {
+    if (user) {
+        currentTutorId = user.id;
+        loadDashboard(user.id);
     }
 });
 

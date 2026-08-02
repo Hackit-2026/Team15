@@ -27,7 +27,7 @@ async function loadTutor() {
 
 async function loadRoom() {
     roomMessage.textContent = "";
-    const response = await fetch(`/api/room_setting/${roomId}`);
+    const response = await fetch(`/api/room/${roomId}`);
     const data = await response.json();
 
     if (!response.ok) {
@@ -73,7 +73,7 @@ closeRoomForm.addEventListener("submit", async (event) => {
 
     const form = new FormData();
     form.append("is_finished", "true");
-    const response = await fetch(`/api/room_close/${roomId}`, {
+    const response = await fetch(`/api/room/${roomId}`, {
         method: "POST",
         body: form,
     });
