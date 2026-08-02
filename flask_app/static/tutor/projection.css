@@ -368,8 +368,9 @@ button {
 .projection-shard {
     position: absolute;
     background-repeat: no-repeat;
-    filter: brightness(1.08) drop-shadow(0 8px 8px rgba(0, 0, 0, 0.45));
-    animation: projection-shard-explode 1.75s cubic-bezier(0.16, 0.72, 0.32, 1) var(--delay) forwards;
+    clip-path: polygon(0 0, 100% 5%, 90% 100%, 8% 94%);
+    filter: brightness(1.18) saturate(1.2) drop-shadow(0 14px 14px rgba(0, 0, 0, 0.58));
+    animation: projection-shard-explode 2.5s cubic-bezier(0.12, 0.72, 0.24, 1) var(--delay) forwards;
 }
 
 .projection-flash {
@@ -378,7 +379,29 @@ button {
     inset: 0;
     background: radial-gradient(circle, white 0 7%, #ffe57e 14%, rgba(255, 115, 30, 0.7) 30%, transparent 60%);
     mix-blend-mode: screen;
-    animation: projection-flash 0.62s ease-out forwards;
+    animation: projection-flash 0.95s ease-out forwards;
+}
+
+.projection-core {
+    position: absolute;
+    z-index: 4;
+    top: 50%;
+    left: 50%;
+    width: min(46vw, 680px);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: radial-gradient(
+        circle,
+        #ffffff 0 7%,
+        #fff5ad 12%,
+        #ffb32b 28%,
+        rgba(255, 67, 20, 0.92) 48%,
+        rgba(91, 10, 5, 0.56) 68%,
+        transparent 74%
+    );
+    filter: blur(2px) saturate(1.35);
+    mix-blend-mode: screen;
+    animation: projection-core 1.25s cubic-bezier(0.08, 0.65, 0.22, 1) forwards;
 }
 
 .projection-shockwave {
@@ -391,11 +414,47 @@ button {
     border: 10px solid rgba(255, 224, 135, 0.95);
     border-radius: 50%;
     box-shadow: 0 0 28px #ff9e32;
-    animation: projection-shockwave 0.85s ease-out forwards;
+    animation: projection-shockwave 1.25s ease-out forwards;
+}
+
+.projection-shockwave--secondary {
+    border-color: rgba(255, 112, 42, 0.8);
+    box-shadow: 0 0 44px rgba(255, 71, 19, 0.94);
+    animation-delay: 0.17s;
+}
+
+.projection-debris,
+.projection-smoke {
+    position: absolute;
+    z-index: 4;
+    pointer-events: none;
+}
+
+.projection-debris {
+    width: var(--debris-size);
+    height: var(--debris-size);
+    border-radius: 45% 8% 58% 18%;
+    background: var(--debris-color);
+    box-shadow: 0 0 14px var(--debris-color);
+    animation: projection-debris-explode 1.7s cubic-bezier(0.12, 0.68, 0.28, 1) var(--debris-delay) forwards;
+}
+
+.projection-smoke {
+    width: var(--smoke-size);
+    height: var(--smoke-size);
+    border-radius: 50%;
+    background: radial-gradient(
+        circle,
+        rgba(75, 58, 52, 0.84) 0 18%,
+        rgba(35, 34, 41, 0.68) 45%,
+        transparent 72%
+    );
+    filter: blur(9px);
+    animation: projection-smoke-burst 2.55s ease-out var(--smoke-delay) forwards;
 }
 
 .projection-stage.is-exploding {
-    animation: projection-shake 0.58s linear;
+    animation: projection-shake 1s linear;
 }
 
 @keyframes projection-emoji-rise {
@@ -413,29 +472,62 @@ button {
 
 @keyframes projection-flash {
     0% { opacity: 0; transform: scale(0.1); }
-    14% { opacity: 1; }
-    100% { opacity: 0; transform: scale(1.8); }
+    7% { opacity: 1; }
+    20% { opacity: 0.98; transform: scale(0.72); }
+    50% { opacity: 0.82; transform: scale(1.4); }
+    100% { opacity: 0; transform: scale(2.4); }
+}
+
+@keyframes projection-core {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.04); }
+    10% { opacity: 1; }
+    38% { opacity: 1; transform: translate(-50%, -50%) scale(0.75); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(2.4); filter: blur(20px); }
 }
 
 @keyframes projection-shockwave {
     0% { opacity: 1; transform: translate(-50%, -50%) scale(0.1); }
-    100% { opacity: 0; transform: translate(-50%, -50%) scale(8); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(14); }
+}
+
+@keyframes projection-debris-explode {
+    0% { opacity: 1; transform: translate(-50%, -50%) scale(0.35); }
+    20% { opacity: 1; }
+    100% {
+        opacity: 0;
+        transform: translate(calc(-50% + var(--debris-x)), calc(-50% + var(--debris-y))) rotate(var(--debris-rotation)) scale(0.08);
+    }
+}
+
+@keyframes projection-smoke-burst {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.16); }
+    20% { opacity: 0.9; }
+    100% {
+        opacity: 0;
+        transform: translate(calc(-50% + var(--smoke-x)), calc(-50% + var(--smoke-y))) scale(1.75);
+    }
 }
 
 @keyframes projection-shake {
     0%, 100% { transform: translate(0); }
-    12% { transform: translate(-12px, 6px) rotate(-0.5deg); }
-    28% { transform: translate(12px, -8px) rotate(0.6deg); }
-    44% { transform: translate(-9px, -4px); }
-    62% { transform: translate(7px, 5px); }
-    80% { transform: translate(-3px, 2px); }
+    5% { transform: translate(-26px, 14px) rotate(-1deg); filter: brightness(1.8); }
+    12% { transform: translate(28px, -17px) rotate(1.1deg); }
+    21% { transform: translate(-22px, -12px) rotate(-0.8deg); }
+    31% { transform: translate(18px, 13px) rotate(0.65deg); }
+    43% { transform: translate(-14px, 8px) rotate(-0.48deg); filter: brightness(1.18); }
+    57% { transform: translate(11px, -7px) rotate(0.34deg); }
+    72% { transform: translate(-7px, 4px) rotate(-0.2deg); }
+    86% { transform: translate(3px, -2px) rotate(0.1deg); }
 }
 
 @media (prefers-reduced-motion: reduce) {
     .projection-emoji,
     .projection-shard,
     .projection-flash,
+    .projection-core,
     .projection-shockwave,
+    .projection-debris,
+    .projection-smoke,
     .projection-stage.is-exploding {
         animation-duration: 0.01ms !important;
     }

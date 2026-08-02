@@ -207,8 +207,8 @@
         const canvasBounds = canvas.getBoundingClientRect();
         const viewportBounds = viewport.getBoundingClientRect();
         const surface = document.createElement("div");
-        const columns = 6;
-        const rows = 4;
+        const columns = 8;
+        const rows = 5;
         surface.className = "destruction-surface";
         Object.assign(surface.style, {
             left: `${canvasBounds.left - viewportBounds.left}px`,
@@ -235,7 +235,7 @@
                 const directionX = (column + 0.5) / columns - 0.5;
                 const directionY = (row + 0.5) / rows - 0.5;
                 const length = Math.hypot(directionX, directionY) || 1;
-                const force = 260 + Math.random() * 260;
+                const force = 380 + Math.random() * 420;
                 shard.style.setProperty(
                     "--shard-x",
                     `${directionX / length * force + (-45 + Math.random() * 90)}px`,
@@ -244,40 +244,58 @@
                     "--shard-y",
                     `${directionY / length * force + (-55 + Math.random() * 110)}px`,
                 );
-                shard.style.setProperty("--shard-z", `${100 + Math.random() * 330}px`);
-                shard.style.setProperty("--shard-rotation", `${-220 + Math.random() * 440}deg`);
-                shard.style.setProperty("--shard-rotation-x", `${-150 + Math.random() * 300}deg`);
-                shard.style.setProperty("--shard-rotation-y", `${-150 + Math.random() * 300}deg`);
-                shard.style.setProperty("--shard-delay", `${Math.random() * 45}ms`);
+                shard.style.setProperty("--shard-z", `${160 + Math.random() * 520}px`);
+                shard.style.setProperty("--shard-rotation", `${-360 + Math.random() * 720}deg`);
+                shard.style.setProperty("--shard-rotation-x", `${-240 + Math.random() * 480}deg`);
+                shard.style.setProperty("--shard-rotation-y", `${-240 + Math.random() * 480}deg`);
+                shard.style.setProperty("--shard-delay", `${Math.random() * 85}ms`);
                 surface.append(shard);
             }
         }
 
         const flash = document.createElement("span");
         flash.className = "explosion-flash";
+        const core = document.createElement("span");
+        core.className = "explosion-core";
         const shockwave = document.createElement("span");
         shockwave.className = "explosion-shockwave";
-        destructionLayer.append(surface, flash, shockwave);
+        const secondaryShockwave = document.createElement("span");
+        secondaryShockwave.className = "explosion-shockwave explosion-shockwave--secondary";
+        destructionLayer.append(surface, flash, core, shockwave, secondaryShockwave);
 
         const centerX = canvasBounds.left - viewportBounds.left + canvasBounds.width / 2;
         const centerY = canvasBounds.top - viewportBounds.top + canvasBounds.height / 2;
         const debrisColors = ["#fff7cf", "#ffd166", "#ff8c42", "#ef476f", "#dfe7ff"];
-        for (let index = 0; index < 42; index += 1) {
+        for (let index = 0; index < 76; index += 1) {
             const debris = document.createElement("span");
             const angle = Math.random() * Math.PI * 2;
-            const force = 130 + Math.random() * 330;
+            const force = 220 + Math.random() * 560;
             const color = debrisColors[index % debrisColors.length];
             debris.className = "explosion-debris";
             debris.style.left = `${centerX}px`;
             debris.style.top = `${centerY}px`;
             debris.style.setProperty("--debris-x", `${Math.cos(angle) * force}px`);
             debris.style.setProperty("--debris-y", `${Math.sin(angle) * force}px`);
-            debris.style.setProperty("--debris-size", `${3 + Math.random() * 9}px`);
-            debris.style.setProperty("--debris-rotation", `${Math.random() * 720}deg`);
-            debris.style.setProperty("--debris-delay", `${Math.random() * 90}ms`);
+            debris.style.setProperty("--debris-size", `${3 + Math.random() * 13}px`);
+            debris.style.setProperty("--debris-rotation", `${Math.random() * 1080}deg`);
+            debris.style.setProperty("--debris-delay", `${Math.random() * 150}ms`);
             debris.style.setProperty("--debris-color", color);
             debris.style.setProperty("--debris-glow", color);
             destructionLayer.append(debris);
+        }
+
+        for (let index = 0; index < 18; index += 1) {
+            const smoke = document.createElement("span");
+            const angle = Math.random() * Math.PI * 2;
+            const distance = 60 + Math.random() * 210;
+            smoke.className = "explosion-smoke";
+            smoke.style.left = `${centerX}px`;
+            smoke.style.top = `${centerY}px`;
+            smoke.style.setProperty("--smoke-x", `${Math.cos(angle) * distance}px`);
+            smoke.style.setProperty("--smoke-y", `${Math.sin(angle) * distance - 80}px`);
+            smoke.style.setProperty("--smoke-size", `${70 + Math.random() * 150}px`);
+            smoke.style.setProperty("--smoke-delay", `${80 + Math.random() * 240}ms`);
+            destructionLayer.append(smoke);
         }
 
         canvas.classList.add("is-shattering");
@@ -289,7 +307,7 @@
             canvas.classList.remove("is-shattering");
             viewport.classList.remove("is-exploding");
             shatterTimer = null;
-        }, 2100);
+        }, 3000);
     }
 
     function resetSlideState() {
@@ -569,9 +587,10 @@
         updateEffectState();
     });
 
-    previewDestructionButton?.addEventListener("click", () => {
+    previewDestructionButton?.addEventListener("click", (event) => {
+        event.stopImmediatePropagation();
         playDestruction();
-    });
+    }, { capture: true });
 
     document.addEventListener("keydown", (event) => {
         if (event.key === "Escape" && !settingsPanel.hidden) {
