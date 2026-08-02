@@ -15,7 +15,7 @@ def tutor_login():
 
 
 @tutor_routes.route("/rooms")
-def tutor_rooms():
+def tutor_roomsa():
   return render_template("tutor/rooms.html", title="講義一覧")
 
 
