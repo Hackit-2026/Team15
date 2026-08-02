@@ -31,6 +31,7 @@ async function loadShareRoom() {
         roomQrCode.width = 320;
         roomQrCode.height = 320;
         roomQrCode.src = `/api/qrcreate?url=${encodeURIComponent(studentRoomUrl.value)}`;
+        await loadSubjectList();
     } catch (error) {
         shareRoomName.textContent = "ルーム情報を取得できませんでした";
         shareRoomStatus.textContent = "取得失敗";
@@ -63,5 +64,26 @@ copyRoomUrl.addEventListener("click", async () => {
         shareMessage.textContent = "URLを選択しました。コピーしてください";
     }
 });
+
+async function loadSubjectList() {
+    try {
+        const response = await fetch("/api/rooms", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ user_id: 1 }),
+        });
+        const rooms = await response.json();
+
+        if (!response.ok) {
+            throw new Error(rooms.error ?? "科目一覧を取得できませんでした");
+        }
+
+        const subjectList = document.getElementById("subjectList");
+        subjectList.innerHTML = rooms.map(room => `<li>${room.name}</li>`).join("");
+    } catch (error) {
+        const subjectList = document.getElementById("subjectList");
+        subjectList.innerHTML = `<li>取得失敗: ${error.message}</li>`;
+    }
+}
 
 loadShareRoom();

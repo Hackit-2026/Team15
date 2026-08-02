@@ -98,10 +98,15 @@ def create_room():
   return jsonify(room_to_dict(room)), 201
 
 
-@main.route("/rooms", methods=["GET"])
+@main.route("/rooms", methods=["GET", "POST"])
 @login_required
 def list_rooms():
-  user_id = request.args.get("user_id", "").strip()
+  if request.method == "POST":
+    data = request.get_json(silent=True) or {}
+    user_id = str(data.get("user_id", "")).strip()
+  else:
+    user_id = request.args.get("user_id", "").strip()
+
   if not user_id:
     return jsonify({"error": "user_idを指定してください"}), 400
 
