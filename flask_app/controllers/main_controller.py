@@ -181,7 +181,7 @@ def get_room_result(room_id):
 
 @main.route("/qrcreate/<id>", methods=["GET"])
 def qr(id):
-  url = "http://127.0.0.1:5000/room/" + id
+  url = "http://" + request.remote_addr + "/room/" + id
   if not url:
     return jsonify({"error": "url parameter is required"}), 400
 

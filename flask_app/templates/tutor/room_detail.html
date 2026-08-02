@@ -1,9 +1,9 @@
-html_content = """<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>授業詳細 - 学習状況ダッシュボード</title>
+    <title>{{ app_name }} - {{ title }}</title>
     <!-- グラフ描画ライブラリ Chart.js の読み込み -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
@@ -135,7 +135,7 @@ html_content = """<!DOCTYPE html>
             border: 1px solid var(--border-color);
             border-radius: 8px;
         }
-        
+
         .table-scroll-wrapper::-webkit-scrollbar {
             width: 8px;
         }
@@ -182,7 +182,7 @@ html_content = """<!DOCTYPE html>
             font-weight: bold;
             display: inline-block;
         }
-        
+
         .badge-safe {
             background-color: #f1f5f9;
             color: #64748b;
@@ -197,14 +197,14 @@ html_content = """<!DOCTYPE html>
 <body data-room-id="{{ room_id }}">
 
     <header>
-        <h1>ネットワーク工学特論 - 授業詳細</h1>
-        <a href="#" class="back-link">← 科目一覧へ戻る</a>
+        <h1 id="cls-title"></h1>
+        <a href="{{ url_for('tutor.tutor_rooms') }}" class="back-link">← 科目一覧へ戻る</a>
     </header>
 
     <div class="container">
         <div class="card">
             <h2>📊 ページ別「わからん」集計</h2>
-            
+
             <div class="dashboard-content">
                 <!-- 左側：グラフ描画エリア（横スクロール対応） -->
                 <div class="chart-scroll-wrapper">
@@ -231,31 +231,98 @@ html_content = """<!DOCTYPE html>
         </div>
     </div>
 
-    <div class="container">
-        <div class="card">
-            <h2>📌 講義収集結果</h2>
-            <div id="reactionResults">API から講義収集結果を取得しています...</div>
-        </div>
-    </div>
-
     <!-- グラフを描画するためのJavaScript -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const reactionResults = document.getElementById('reactionResults');
-            const roomIdFromBody = Number(document.body.dataset.roomId);
-            const roomIdFromPath = (() => {
-                const match = window.location.pathname.match(/\/tutor\/room\/(\d+)(?:\/|$)/);
-                return match ? Number(match[1]) : null;
-            })();
-            const roomId = Number.isInteger(roomIdFromBody) && roomIdFromBody > 0
-                ? roomIdFromBody
-                : Number.isInteger(roomIdFromPath) && roomIdFromPath > 0
-                    ? roomIdFromPath
-                    : null;
+            const clsTitle = document.getElementById('cls-title');
+            const tbody = document.getElementById('tableBody');
+            const chartContainer = document.getElementById('chartContainer');
+            const roomId = Number(document.body.dataset.roomId);
+            let chart = null;
 
-            if (!roomId) {
-                reactionResults.textContent = 'room_id が設定されていません。';
+            if (!Number.isInteger(roomId) || roomId <= 0) {
+                clsTitle.textContent = 'room_id が設定されていません。';
                 return;
+            }
+
+            function renderChartAndTable(pageCounts) {
+                const pages = Object.keys(pageCounts).map(Number).sort((a, b) => a - b);
+                const labels = pages.map((page) => `P.${page}`);
+                const data = pages.map((page) => pageCounts[page]);
+
+                // 表を描画
+                tbody.innerHTML = '';
+                pages.forEach((page, index) => {
+                    const count = data[index];
+                    const tr = document.createElement('tr');
+                    const tdPage = document.createElement('td');
+                    tdPage.textContent = `P. ${page}`;
+
+                    const tdCount = document.createElement('td');
+                    const span = document.createElement('span');
+                    span.textContent = `${count} 回`;
+                    span.className = count >= 10 ? 'badge' : 'badge-safe';
+                    tdCount.appendChild(span);
+
+                    tr.appendChild(tdPage);
+                    tr.appendChild(tdCount);
+                    tbody.appendChild(tr);
+                });
+
+                // グラフエリアの幅をデータ数に応じて動的に設定 (1データあたり約40pxの幅を確保)
+                const minWidth = labels.length * 40;
+                chartContainer.style.minWidth = Math.max(minWidth, 400) + 'px';
+
+                if (chart) {
+                    chart.data.labels = labels;
+                    chart.data.datasets[0].data = data;
+                    chart.update();
+                    return;
+                }
+
+                const ctx = document.getElementById('wakaranChart').getContext('2d');
+                chart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'わからん！の回数',
+                            data: data,
+                            backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                            borderColor: 'rgb(239, 68, 68)',
+                            borderWidth: 1,
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false, // コンテナの高さ・幅に合わせるために必須
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    stepSize: 5
+                                },
+                                title: {
+                                    display: true,
+                                    text: '回数'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return context.raw + ' 回';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
             }
 
             async function loadReactionResults() {
@@ -271,126 +338,18 @@ html_content = """<!DOCTYPE html>
                     if (!response.ok) {
                         throw new Error(data.error || '収集結果の取得に失敗しました');
                     }
-                    if (!data.page_counts || Object.keys(data.page_counts).length === 0) {
-                        reactionResults.textContent = '収集結果がありません。';
-                        return;
-                    }
-                    reactionResults.innerHTML = `
-                        <p>ルーム: ${data.room_name} (ID: ${data.room_id})</p>
-                        <p>反応数: ${data.reaction_count}</p>
-                        <h3>ページ別集計</h3>
-                        <ul>
-                            ${Object.entries(data.page_counts).map(([page, count]) => `
-                                <li>ページ ${page}: ${count} 回</li>
-                            `).join('')}
-                        </ul>
-                        <h3>詳細反応</h3>
-                        <ul>
-                            ${data.reactions.map(reaction => `
-                                <li>反応ID: ${reaction.id}, ユーザーID: ${reaction.user_id}, ページ: ${reaction.page}</li>
-                            `).join('')}
-                        </ul>
-                    `;
+
+                    const pageCounts = data.page_counts || {};
+                    renderChartAndTable(pageCounts);
+                    clsTitle.textContent = data.room_name;
                 } catch (error) {
-                    reactionResults.textContent = `収集結果の取得に失敗しました: ${error.message}`;
+                    clsTitle.textContent = `収集結果の取得に失敗しました: ${error.message}`;
+                    renderChartAndTable({});
                 }
             }
 
             loadReactionResults();
-
-            // スクロールのテスト用に、30ページ分のダミーデータを生成
-            const totalPages = 30;
-            const labels = [];
-            const data = [];
-            const tbody = document.getElementById('tableBody');
-
-            for (let i = 1; i <= totalPages; i++) {
-                labels.push(`P.${i}`);
-                
-                // 特定のページだけ回数を多くする
-                let count = 0;
-                if (i === 4) count = 28;
-                else if (i === 5) count = 15;
-                else if (i === 12) count = 10;
-                else if (i === 25) count = 22;
-                else {
-                    // 他は0〜3回のランダム
-                    count = Math.floor(Math.random() * 4);
-                }
-                data.push(count);
-
-                // 表の行を生成
-                const tr = document.createElement('tr');
-                const tdPage = document.createElement('td');
-                tdPage.textContent = `P. ${i}`;
-                
-                const tdCount = document.createElement('td');
-                const span = document.createElement('span');
-                span.textContent = `${count} 回`;
-                span.className = count >= 10 ? 'badge' : 'badge-safe';
-                tdCount.appendChild(span);
-                
-                tr.appendChild(tdPage);
-                tr.appendChild(tdCount);
-                tbody.appendChild(tr);
-            }
-
-            // グラフエリアの幅をデータ数に応じて動的に設定 (1データあたり約40pxの幅を確保)
-            const minWidth = labels.length * 40;
-            // グラフエリアのコンテナの最小幅を設定
-            document.getElementById('chartContainer').style.minWidth = Math.max(minWidth, 400) + 'px';
-
-            const ctx = document.getElementById('wakaranChart').getContext('2d');
-
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'わからん！の回数',
-                        data: data,
-                        backgroundColor: 'rgba(239, 68, 68, 0.7)',
-                        borderColor: 'rgb(239, 68, 68)',
-                        borderWidth: 1,
-                        borderRadius: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false, // コンテナの高さ・幅に合わせるために必須
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                stepSize: 5
-                            },
-                            title: {
-                                display: true,
-                                text: '回数'
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return context.raw + ' 回';
-                                }
-                            }
-                        }
-                    }
-                }
-            });
         });
     </script>
 </body>
 </html>
-"""
-
-with open('/mnt/data/course_stats_scroll.html', 'w', encoding='utf-8') as f:
-    f.write(html_content)
-
-print("File updated successfully.")
